@@ -30,29 +30,29 @@ export type Views<T extends keyof Database['public']['Views']> =
 // Use these in components instead of re-typing field shapes by hand.
 
 export type Business      = Tables<'businesses'>
-export type UserProfile   = Tables<'users'>
+export type UserProfile   = Tables<'profiles'>
 export type Service       = Tables<'services'>
-export type Customer      = Tables<'customers'>
-export type Appointment   = Tables<'appointments'>
-export type HealthScore   = Tables<'health_scores'>
+// export type Customer      = Tables<'customers'>
+// export type Appointment   = Tables<'appointments'>
+// export type HealthScore   = Tables<'health_scores'>
 
 // ── View row types ────────────────────────────────────────────────────────────
 
-export type AppointmentDetail = Views<'appointment_details_view'>
-export type AtRiskCustomer    = Views<'at_risk_customers_view'>
-export type DailyRevenue      = Views<'daily_revenue_view'>
+// export type AppointmentDetail = Views<'appointment_details_view'>
+// export type AtRiskCustomer    = Views<'at_risk_customers_view'>
+// export type DailyRevenue      = Views<'daily_revenue_view'>
 
 // ── Enum types ────────────────────────────────────────────────────────────────
 
-export type {
-  BusinessType,
-  UserRole,
-  AppointmentStatus,
-  HealthPeriodType,
-  OperatingHours,
-  DayHours,
-  HealthFlag,
-} from '@/lib/database.types'
+// export type {
+//   BusinessType,
+//   UserRole,
+//   AppointmentStatus,
+//   HealthPeriodType,
+//   OperatingHours,
+//   DayHours,
+//   HealthFlag,
+// } from '@/lib/database.types'
 
 // ── RPC return types ──────────────────────────────────────────────────────────
 
