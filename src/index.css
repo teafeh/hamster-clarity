@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Root defaults — all spacing and type decisions flow from here */
+  :root {
+    --radius: 8px;
+  }
+
+  html {
+    /* Prevent layout shift on scrollbar appearance */
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    @apply bg-surface-50 text-surface-900 antialiased;
+    font-feature-settings: 'ss01', 'cv01';
+  }
+
+  /* Remove default button and input styles — we reapply deliberately */
+  button {
+    @apply cursor-pointer;
+  }
+
+  /* Focus ring — consistent across all interactive elements */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white;
+  }
+}
+
+@layer components {
+  /* ── Input base ──────────────────────────────────────────── */
+  .input-base {
+    @apply w-full rounded-md border border-surface-200 bg-white px-3 py-2
+           text-sm text-surface-900 placeholder:text-surface-400
+           transition-colors duration-150
+           hover:border-surface-300
+           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none
+           disabled:cursor-not-allowed disabled:bg-surface-50 disabled:text-surface-400;
+  }
+
+  /* ── Button variants ─────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-md bg-brand-500 px-4 py-2
+           text-sm font-medium text-white
+           transition-colors duration-150
+           hover:bg-brand-600 active:bg-brand-700
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-md border border-surface-200 bg-white px-4 py-2
+           text-sm font-medium text-surface-700
+           transition-colors duration-150
+           hover:bg-surface-50 hover:border-surface-300
+           active:bg-surface-100
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-md px-4 py-2
+           text-sm font-medium text-surface-600
+           transition-colors duration-150
+           hover:bg-surface-100 hover:text-surface-900
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* ── Card ────────────────────────────────────────────────── */
+  .card {
+    @apply rounded-lg border border-surface-200 bg-white shadow-card;
+  }
+
+  /* ── Badge variants ──────────────────────────────────────── */
+  .badge-success {
+    @apply inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5
+           text-xs font-medium text-brand-700;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5
+           text-xs font-medium text-amber-700;
+  }
+
+  .badge-danger {
+    @apply inline-flex items-center rounded-full bg-red-50 px-2 py-0.5
+           text-xs font-medium text-red-700;
+  }
+
+  .badge-neutral {
+    @apply inline-flex items-center rounded-full bg-surface-100 px-2 py-0.5
+           text-xs font-medium text-surface-600;
+  }
+}
