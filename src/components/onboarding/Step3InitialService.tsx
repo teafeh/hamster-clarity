@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useOnboarding } from '@/hooks/useOnboarding'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -8,9 +7,13 @@ type FieldErrors = Partial<Record<FieldKey, string>>
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function Step3InitialService() {
-  const { submitStep3, isLoading, error } = useOnboarding()
-
+export default function Step3InitialService ({
+  onboarding,
+}: {
+  onboarding: any
+}) {
+    const { submitStep3, isLoading, error } = onboarding
+    
   const [name,     setName]     = useState('')
   const [price,    setPrice]    = useState('')
   const [duration, setDuration] = useState('')

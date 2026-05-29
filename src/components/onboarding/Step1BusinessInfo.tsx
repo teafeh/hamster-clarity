@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useOnboarding } from '@/hooks/useOnboarding'
 
 const BUSINESS_TYPES = [
   'Hair Salon',
@@ -24,8 +23,12 @@ interface FieldErrors {
   businessType?: string
 }
 
-export default function Step1BusinessInfo() {
-const {submitStep1, isLoading, error,} = useOnboarding()
+export default function Step1BusinessInfo({
+  onboarding,
+}: {
+  onboarding: any
+    }) {
+    const { submitStep1, isLoading, error } = onboarding
     
   const [businessName, setBusinessName] = useState('')
   const [businessType, setBusinessType] = useState('')

@@ -1,19 +1,43 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 
-export default function ProtectedRoute() {
-  const { user, loading } = useAuth()
+interface ProtectedRouteProps {
+  // Default true — requires authentication AND completed onboarding.
+  // Pass false for routes that require auth but not completed onboarding (e.g. /onboarding itself).
+  requireOnboardingComplete?: boolean
+}
+
+export default function ProtectedRoute({
+  requireOnboardingComplete = true,
+}: ProtectedRouteProps) {
+  const { user, profile, loading } = useAuth()
 
   if (loading) {
     return <LoadingScreen />
   }
 
+  // Not authenticated — send to sign in regardless of route type
   if (!user) {
     return <Navigate to="/signin" replace />
   }
 
+  if (requireOnboardingComplete) {
+    // Gate: onboarding must be complete to proceed.
+    // Treat a missing profile row the same as incomplete — sends user to onboarding.
+    if (!profile?.onboarding_completed) {
+      return <Navigate to="/onboarding" replace />
+    }
+  } else {
+    // Onboarding route: if already complete, skip the wizard.
+    if (profile?.onboarding_completed) {
+      return <Navigate to="/dashboard" replace />
+    }
+  }
+
   return <Outlet />
 }
+
+// ─── Loading screen ───────────────────────────────────────────────────────────
 
 function LoadingScreen() {
   return (

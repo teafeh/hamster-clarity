@@ -22,7 +22,7 @@ export interface Step1Data {
 // Hook Return Type
 // ─────────────────────────────────────────────────────────────
 
-interface UseOnboardingReturn {
+export interface UseOnboardingReturn {
   currentStep: number
   isLoading: boolean
   error: string | null
@@ -42,8 +42,8 @@ interface UseOnboardingReturn {
 export function useOnboarding(): UseOnboardingReturn {
   const navigate = useNavigate()
 
-  const { user } = useAuth()
-
+    const { user, refreshProfile } = useAuth()
+    
   const [currentStep, setCurrentStep] = useState(1)
   const [businessId, setBusinessId] = useState<string | null>(null)
 
@@ -157,7 +157,11 @@ export function useOnboarding(): UseOnboardingReturn {
       await onboardingService.completeOnboarding(
         user.id
       )
+        
+        await refreshProfile()
 
+
+        
       navigate('/dashboard')
     } catch (err) {
       if (err instanceof Error) {

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useOnboarding } from '@/hooks/useOnboarding'
 import type { OperatingHours, DayHours } from '@/services/onboardingService'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -28,8 +27,11 @@ const DEFAULT_HOURS: OperatingHours = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function Step2OperatingHours() {
-  const { submitStep2, isLoading, error } = useOnboarding()
+export default function Step2OperatingHours ({  onboarding,
+}: {
+  onboarding: any
+}) {
+    const { submitStep2, isLoading, error } = onboarding
 
   const [hours, setHours] = useState<OperatingHours>(DEFAULT_HOURS)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<Day, string>>>({})
