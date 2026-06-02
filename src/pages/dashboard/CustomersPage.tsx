@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { useCustomers } from '@/hooks/useCustomers'
+import { useCustomers }  from '@/hooks/useCustomers'
+import CustomerForm      from '@/components/customers/CustomerForm'
+import CustomerCard      from '@/components/customers/CustomerCard'
 import type { Customer } from '@/services/customerService'
-import CustomerForm from '@/components/customers/CustomerForm'
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CustomersPage() {
   const {
@@ -20,7 +19,6 @@ export default function CustomersPage() {
     archiveCustomer,
   } = useCustomers()
 
-  // ── UI state ──────────────────────────────────────────────────────────────
   const [showForm,         setShowForm]         = useState(false)
   const [editingCustomer,  setEditingCustomer]  = useState<Customer | null>(null)
   const [confirmArchiveId, setConfirmArchiveId] = useState<string | null>(null)
@@ -82,7 +80,7 @@ export default function CustomersPage() {
     return customers.length === 1 ? '1 customer' : `${customers.length} customers`
   })()
 
-  // ─── Render ──────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div
@@ -131,7 +129,10 @@ export default function CustomersPage() {
       {/* ── Search — list view only, hidden during load ───────────────────── */}
       {!showForm && !loading && customers.length > 0 && (
         <div className="relative mb-5">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#9CA3AF' }}>
+          <span
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: '#9CA3AF' }}
+          >
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <circle cx="11" cy="11" r="8" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
@@ -183,7 +184,9 @@ export default function CustomersPage() {
       )}
 
       {/* ── Content ──────────────────────────────────────────────────────── */}
+
       {showForm ? (
+
         <CustomerForm
           customer={editingCustomer}
           submitting={submitting}
@@ -193,22 +196,23 @@ export default function CustomersPage() {
           onCreate={createCustomer}
           onUpdate={updateCustomer}
         />
+
       ) : loading ? (
+
         // ── Loading skeleton ──────────────────────────────────────────────
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
               className="h-20 rounded-lg border animate-pulse"
-              style={{
-                backgroundColor: '#F3F4F6',
-                borderColor: '#E5E7EB',
-              }}
+              style={{ backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }}
             />
           ))}
         </div>
+
       ) : customers.length === 0 ? (
-        // ── Empty state — no customers yet ────────────────────────────────
+
+        // ── Empty state ───────────────────────────────────────────────────
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
@@ -242,7 +246,9 @@ export default function CustomersPage() {
             Add your first customer
           </button>
         </div>
+
       ) : filteredCustomers.length === 0 ? (
+
         // ── No search results ─────────────────────────────────────────────
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div
@@ -274,158 +280,26 @@ export default function CustomersPage() {
             Clear search
           </button>
         </div>
+
       ) : (
-        // ── Customer list ──
+
+        // ── Customer list ─────────────────────────────────────────────────
         <div className="space-y-3">
           {filteredCustomers.map((customer) => (
-            <div
+            <CustomerCard
               key={customer.id}
-              className="rounded-lg border p-4 sm:p-5"
-              style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }}
-            >
-              <div className="flex items-start gap-4">
-
-                {/* Initials avatar */}
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 select-none"
-                  style={{
-                    backgroundColor: getInitialsBg(customer.first_name),
-                    color: '#FFFFFF',
-                  }}
-                >
-                  {getInitials(customer.first_name, customer.last_name)}
-                </div>
-
-                {/* Customer info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: '#111111' }}>
-                    {formatName(customer.first_name, customer.last_name)}
-                  </p>
-
-                  <div className="mt-0.5 space-y-0.5">
-                    {customer.phone && (
-                      <p className="text-xs" style={{ color: '#6B7280' }}>
-                        {customer.phone}
-                      </p>
-                    )}
-                    {customer.email && (
-                      <p className="text-xs truncate" style={{ color: '#6B7280' }}>
-                        {customer.email}
-                      </p>
-                    )}
-                    {customer.notes && (
-                      <p
-                        className="text-xs truncate mt-1"
-                        style={{ color: '#9CA3AF' }}
-                        title={customer.notes}
-                      >
-                        {customer.notes}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {confirmArchiveId === customer.id ? (
-                    // ── Archive confirmation ──────────────────────────────
-                    <div className="flex items-center gap-2 flex-wrap justify-end">
-                      <span className="text-xs" style={{ color: '#6B7280' }}>
-                        Archive?
-                      </span>
-                      <button
-                        onClick={() => handleArchiveConfirm(customer.id)}
-                        disabled={submitting}
-                        className="px-3 py-1.5 rounded text-xs font-semibold transition-opacity"
-                        style={{
-                          backgroundColor: '#B45309',
-                          color:           '#FFFFFF',
-                          opacity:         submitting ? 0.5 : 1,
-                          cursor:          submitting ? 'not-allowed' : 'pointer',
-                        }}
-                      >
-                        {submitting ? 'Archiving…' : 'Yes, archive'}
-                      </button>
-                      <button
-                        onClick={handleArchiveCancel}
-                        disabled={submitting}
-                        className="px-3 py-1.5 rounded text-xs font-medium border"
-                        style={{ borderColor: '#D1D5DB', color: '#374151' }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    // ── Edit + Archive ────────────────────────────────────
-                    <>
-                      <button
-                        onClick={() => handleOpenEdit(customer)}
-                        disabled={submitting}
-                        className="px-3 py-1.5 rounded text-xs font-medium border transition-colors"
-                        style={{
-                          borderColor:     '#D1D5DB',
-                          color:           '#374151',
-                          backgroundColor: '#FFFFFF',
-                          opacity:         submitting ? 0.5 : 1,
-                          cursor:          submitting ? 'not-allowed' : 'pointer',
-                        }}
-                        onMouseEnter={(e) => { if (!submitting) e.currentTarget.style.backgroundColor = '#F9FAFB' }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#FFFFFF' }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleArchiveClick(customer.id)}
-                        disabled={submitting}
-                        className="px-3 py-1.5 rounded text-xs font-medium border transition-colors"
-                        style={{
-                          borderColor:     '#FDE68A',
-                          color:           '#B45309',
-                          backgroundColor: '#FFFFFF',
-                          opacity:         submitting ? 0.5 : 1,
-                          cursor:          submitting ? 'not-allowed' : 'pointer',
-                        }}
-                        onMouseEnter={(e) => { if (!submitting) e.currentTarget.style.backgroundColor = '#FFFBEB' }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#FFFFFF' }}
-                      >
-                        Archive
-                      </button>
-                    </>
-                  )}
-                </div>
-
-              </div>
-            </div>
+              customer={customer}
+              submitting={submitting}
+              confirmingArchive={confirmArchiveId === customer.id}
+              onEdit={() => handleOpenEdit(customer)}
+              onArchive={() => handleArchiveClick(customer.id)}
+              onArchiveConfirm={() => handleArchiveConfirm(customer.id)}
+              onArchiveCancel={handleArchiveCancel}
+            />
           ))}
         </div>
+
       )}
     </div>
   )
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatName(firstName: string, lastName: string | null): string {
-  return lastName ? `${firstName} ${lastName}` : firstName
-}
-
-function getInitials(firstName: string, lastName: string | null): string {
-  const first = firstName.charAt(0).toUpperCase()
-  const last  = lastName ? lastName.charAt(0).toUpperCase() : ''
-  return `${first}${last}`
-}
-
-/** Deterministic background colour based on first character of name. */
-function getInitialsBg(name: string): string {
-  const palette = [
-    '#E07B39', // brand amber
-    '#0D9488', // teal
-    '#7C3AED', // violet
-    '#0284C7', // sky
-    '#16A34A', // green
-    '#DC2626', // red
-    '#9333EA', // purple
-    '#D97706', // amber-600
-  ]
-  return palette[name.charCodeAt(0) % palette.length] || '#E07B39'
 }

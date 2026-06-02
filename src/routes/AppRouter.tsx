@@ -6,6 +6,7 @@ import SignInPage        from '@/pages/SignInPage'
 import OnboardingPage    from '@/pages/OnboardingPage'
 import DashboardHomePage from '@/pages/dashboard/DashboardHomePage'
 import ServicesPage from '@/pages/ServicesPage'
+import CustomersPage from '@/pages/dashboard/CustomersPage'
 
 
 function ComingSoonStub({ label }: { label: string }) {
@@ -51,7 +52,7 @@ export default function AppRouter() {
 
     <Route
       path="customers"
-      element={<ComingSoonStub label="Customers" />}
+      element={<CustomersPage  />}
     />
 
     <Route

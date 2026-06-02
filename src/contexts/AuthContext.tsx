@@ -37,19 +37,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ─── Profile fetch ──────────────────────────────────────────────────────────
 
   const fetchProfile = async (userId: string): Promise<void> => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, onboarding_completed, created_at')
-      .eq('id', userId)
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, onboarding_completed, created_at')
+        .eq('id', userId)
+        .single()
 
-    if (error) {
-      console.error('Failed to fetch profile:', error.message)
+      if (error) {
+        console.error('Failed to fetch profile:', error.message)
+        setProfile(null)
+        return
+      }
+
+      setProfile(data)
+    } catch (err) {
+      console.error('Unexpected error fetching profile:', err)
       setProfile(null)
-      return
     }
-
-    setProfile(data)
   }
 
   // Exposed to consumers — called after onboarding completes
@@ -64,37 +69,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true
 
     const hydrate = async () => {
-      const session = await authService.getSession()
+      try {
+        const currentSession = await authService.getSession()
 
-      if (!mounted) return
+        if (!mounted) return
 
-      setSession(session)
-      setUser(session?.user ?? null)
+        setSession(currentSession)
+        setUser(currentSession?.user ?? null)
 
-      if (session?.user) {
-        await fetchProfile(session.user.id)
+        if (currentSession?.user) {
+          await fetchProfile(currentSession.user.id)
+        } else {
+          setProfile(null)
+        }
+      } catch (err) {
+        console.error('Error during auth hydration:', err)
+        if (mounted) {
+          setSession(null)
+          setUser(null)
+          setProfile(null)
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
       }
-
-      setLoading(false)
     }
 
     hydrate()
 
     // Keep auth state in sync across tabs and token refreshes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (!mounted) return
+      async (_event, currentSession) => {
+        try {
+          if (!mounted) return
 
-        setSession(session)
-        setUser(session?.user ?? null)
+          setSession(currentSession)
+          setUser(currentSession?.user ?? null)
 
-        if (session?.user) {
-          await fetchProfile(session.user.id)
-        } else {
-          setProfile(null)
+          if (currentSession?.user) {
+            await fetchProfile(currentSession.user.id)
+          } else {
+            setProfile(null)
+          }
+        } catch (err) {
+          console.error('Error during auth state change:', err)
+          if (mounted) {
+            setSession(null)
+            setUser(null)
+            setProfile(null)
+          }
+        } finally {
+          if (mounted) {
+            setLoading(false)
+          }
         }
-
-        setLoading(false)
       }
     )
 
@@ -115,9 +144,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async (): Promise<void> => {
-    await authService.signOut()
-    setProfile(null)
+    try {
+      await authService.signOut()
+    } finally {
+      setProfile(null)
+    }
   }
+  console.log('AuthContext', {
+  loading,
+  user,
+  profile,
+})
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 

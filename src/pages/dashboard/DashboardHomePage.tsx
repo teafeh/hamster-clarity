@@ -29,7 +29,7 @@ const FEATURE_CARDS: FeatureCard[] = [
     label:       'Customers',
     description: 'Build and maintain your customer relationships.',
     to:          '/dashboard/customers',
-    enabled:     false,
+    enabled:     true,
     icon: (
       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />

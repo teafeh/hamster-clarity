@@ -7,6 +7,8 @@ interface ProtectedRouteProps {
   requireOnboardingComplete?: boolean
 }
 
+
+
 export default function ProtectedRoute({
   requireOnboardingComplete = true,
 }: ProtectedRouteProps) {
@@ -33,9 +35,16 @@ export default function ProtectedRoute({
       return <Navigate to="/dashboard" replace />
     }
   }
+  console.log('ProtectedRoute', {
+  loading,
+  user,
+  profile,
+})
 
   return <Outlet />
 }
+
+
 
 // ─── Loading screen ───────────────────────────────────────────────────────────
 
