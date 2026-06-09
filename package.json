@@ -12,7 +12,9 @@
     "supabase:types": "supabase gen types typescript --project-id YOUR_PROJECT_REF > src/lib/database.types.ts"
   },
   "dependencies": {
+    "@lottiefiles/dotlottie-react": "^0.19.4",
     "@supabase/supabase-js": "^2.43.4",
+    "lucide-react": "^1.17.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.1"

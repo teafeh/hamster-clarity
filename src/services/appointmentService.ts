@@ -22,6 +22,12 @@ export interface AppointmentService {
   price: number
 }
 
+export interface AppointmentBusiness {
+  id: string
+  name: string
+  slug: string
+}
+
 /**
  * A full appointment row from the database with related customer and
  * service data resolved. status is narrowed from string to the known
@@ -31,7 +37,9 @@ export interface AppointmentService {
 export interface AppointmentWithRelations extends Omit<AppointmentRow, 'status'> {
   status:   AppointmentStatus
   customer: AppointmentCustomer | null
-  service:  AppointmentService  | null
+  service: AppointmentService | null
+    business: AppointmentBusiness | null
+
 }
 
 /**
@@ -40,11 +48,15 @@ export interface AppointmentWithRelations extends Omit<AppointmentRow, 'status'>
  * scheduled_at is an ISO 8601 timestamptz string.
  */
 export interface AppointmentPayload {
-  customer_id:      string
+  customer_id: string
   service_id: string
-  scheduled_at:     string
+  scheduled_at: string
   duration_minutes: number | null
-  notes:            string | null
+  notes: string | null
+
+  customer_status: string | null
+  assigned_to: string | null
+  lead_source: string | null
 }
 
 export interface GetAppointmentsOptions {
@@ -75,8 +87,12 @@ const APPOINTMENT_SELECT = `
   notes,
   created_at,
   updated_at,
+  customer_status,
+  assigned_to,
+  lead_source,
   customer:customers ( id, first_name, last_name ),
   service:services   ( id, name, price )
+  business:businesses ( id, name, slug )
 `.trim()
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -130,14 +146,18 @@ export const appointmentService = {
     const { data, error } = await supabase
       .from('appointments')
       .insert({
-        business_id:      businessId,
-        user_id:          userId,
-        customer_id:      payload.customer_id,
-         service_id: payload.service_id,
-          scheduled_at: payload.scheduled_at,
-        duration_minutes: payload.duration_minutes ?? null,
-        notes:            payload.notes?.trim()     || null,
-      })
+  business_id: businessId,
+  user_id: userId,
+  customer_id: payload.customer_id,
+  service_id: payload.service_id,
+  scheduled_at: payload.scheduled_at,
+  duration_minutes: payload.duration_minutes ?? null,
+  notes: payload.notes?.trim() || null,
+
+  customer_status: payload.customer_status,
+  assigned_to: payload.assigned_to,
+  lead_source: payload.lead_source,
+})
       .select(APPOINTMENT_SELECT)
       .single()
 
@@ -159,12 +179,16 @@ export const appointmentService = {
     const { data, error } = await supabase
       .from('appointments')
       .update({
-        customer_id:      payload.customer_id,
-       service_id: payload.service_id,
-        scheduled_at:     payload.scheduled_at,
-        duration_minutes: payload.duration_minutes ?? null,
-        notes:            payload.notes?.trim()     || null,
-      })
+  customer_id: payload.customer_id,
+  service_id: payload.service_id,
+  scheduled_at: payload.scheduled_at,
+  duration_minutes: payload.duration_minutes ?? null,
+  notes: payload.notes?.trim() || null,
+
+  customer_status: payload.customer_status,
+  assigned_to: payload.assigned_to,
+  lead_source: payload.lead_source,
+})
       .eq('id', appointmentId)
       .select(APPOINTMENT_SELECT)
       .single()
@@ -216,4 +240,20 @@ export const appointmentService = {
   ): Promise<AppointmentWithRelations> {
     return appointmentService.updateAppointmentStatus(appointmentId, 'cancelled')
   },
+
+
+  async getAppointmentById(
+  appointmentId: string
+): Promise<AppointmentWithRelations | null> {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(APPOINTMENT_SELECT)
+    .eq('id', appointmentId)
+    .single()
+
+  if (error) throw error
+
+  return data as unknown as AppointmentWithRelations
+  },
+  
 }

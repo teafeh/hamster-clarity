@@ -5,6 +5,8 @@ interface TopBarProps {
   onMenuClick: () => void
 }
 
+
+
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard':              'Dashboard',
   '/dashboard/services':     'Services',
@@ -15,6 +17,9 @@ const PAGE_TITLES: Record<string, string> = {
 export default function TopBar({ onMenuClick }: TopBarProps) {
   const { user } = useAuth()
   const { pathname } = useLocation()
+
+  const userInitial =
+  user?.email?.charAt(0).toUpperCase() ?? '?'
 
   const title = PAGE_TITLES[pathname] ?? 'Dashboard'
 
@@ -51,9 +56,17 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
       </div>
 
       {/* User email */}
-      <span className="text-xs hidden sm:block" style={{ color: '#9CA3AF' }}>
-        {user?.email}
-      </span>
+      {/* User avatar */}
+<div
+  className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold"
+  style={{
+    backgroundColor: '#E07B39',
+    color: '#FFFFFF',
+  }}
+  title={user?.email}
+>
+  {userInitial}
+</div>
     </header>
   )
 }

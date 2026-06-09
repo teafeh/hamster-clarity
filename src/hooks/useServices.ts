@@ -15,6 +15,10 @@ export interface UseServicesResult {
   createService: (payload: ServicePayload) => Promise<boolean>
   updateService: (serviceId: string, payload: ServicePayload) => Promise<boolean>
   deleteService: (serviceId: string) => Promise<boolean>
+  toggleAvailability: (
+  serviceId: string,
+  isAvailable: boolean
+) => Promise<boolean>
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -122,6 +126,38 @@ export function useServices(): UseServicesResult {
     }
   }
 
+  const toggleAvailability = async (
+  serviceId: string,
+  isAvailable: boolean
+): Promise<boolean> => {
+  setSubmitting(true)
+  setError(null)
+
+  try {
+    const updated = await serviceService.toggleAvailability(
+      serviceId,
+      isAvailable
+    )
+
+    setServices((prev) =>
+      prev.map((service) =>
+        service.id === serviceId ? updated : service
+      )
+    )
+
+    return true
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'Failed to update availability.'
+    )
+    return false
+  } finally {
+    setSubmitting(false)
+  }
+}
+
   // ─── Delete ──────────────────────────────────────────────────────────────
 
   const deleteService = async (serviceId: string): Promise<boolean> => {
@@ -158,6 +194,7 @@ export function useServices(): UseServicesResult {
     clearError,
     createService,
     updateService,
+    toggleAvailability,
     deleteService,
   }
 }

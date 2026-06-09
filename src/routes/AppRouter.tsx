@@ -1,71 +1,75 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import ProtectedRoute    from '@/routes/ProtectedRoute'
-import DashboardLayout   from '@/components/layout/DashboardLayout'
-import SignUpPage        from '@/pages/SignUpPage'
-import SignInPage        from '@/pages/SignInPage'
-import OnboardingPage    from '@/pages/OnboardingPage'
+import ProtectedRoute from '@/routes/ProtectedRoute'
+import PublicRoute from '@/routes/PublicRoute'
+import DashboardLayout from '@/components/layout/DashboardLayout'
+import SignUpPage from '@/pages/SignUpPage'
+import SignInPage from '@/pages/SignInPage'
+import OnboardingPage from '@/pages/OnboardingPage'
 import DashboardHomePage from '@/pages/dashboard/DashboardHomePage'
 import ServicesPage from '@/pages/ServicesPage'
 import CustomersPage from '@/pages/dashboard/CustomersPage'
-
-
-function ComingSoonStub({ label }: { label: string }) {
-  return (
-    <div className="px-6 py-8 max-w-3xl mx-auto w-full">
-      <h2
-        className="text-2xl font-semibold mb-2"
-        style={{ fontFamily: "'Fraunces', serif", color: '#111111' }}
-      >
-        {label}
-      </h2>
-      <p className="text-sm" style={{ color: '#6B7280' }}>
-        This module is not yet available.
-      </p>
-    </div>
-  )
-}
-
-// ─── Router ───────────────────────────────────────────────────────────────────
+import AppointmentsPage from '@/pages/dashboard/AppointmentsPage'
+import PublicAppointmentPage from '@/pages/public/PublicAppointmentPage'
+import BookingSuccessPage from '@/pages/public/BookingSuccessPage'
+import PublicBookingPage from '@/pages/public/PublicBookingPage'
+import NotFoundPage from '../pages/NotFoundPage'
+import CRMPage from '@/pages/CRMPage'
+import SettingsPage from '@/pages/dashboard/SettingsPage'
 
 export default function AppRouter() {
   return (
-      <Routes>
+    <Routes>
 
-        {/* ── Public ───────────────────────────────────────────────────────── */}
+      {/* ── Root redirect ─────────────────────────────────────────────────── */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      {/* ── Public auth pages — inaccessible when a valid session exists ───── */}
+      {/* PublicRoute redirects authenticated users to /dashboard instead of   */}
+      {/* rendering sign-in or sign-up.                                        */}
+      <Route element={<PublicRoute />}>
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/signin" element={<SignInPage />} />
+        <Route
+          path="/booking/:appointmentId"
+          element={<PublicAppointmentPage />}
+        />
 
-        {/* ── Auth only — onboarding not required ──────────────────────────── */}
-        <Route element={<ProtectedRoute requireOnboardingComplete={false} />}>
-          <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route
+          path="/booking-success/:appointmentId"
+          element={<BookingSuccessPage />}
+        />
+
+        <Route
+          path="/book/:businessSlug"
+          element={<PublicBookingPage />}
+        />
+      </Route>
+
+
+      {/* ── Auth required — onboarding not yet complete ───────────────────── */}
+      <Route element={<ProtectedRoute requireOnboardingComplete={false} />}>
+        <Route path="/onboarding" element={<OnboardingPage />} />
+      </Route>
+
+      {/* ── Auth required — onboarding must be complete ───────────────────── */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<DashboardHomePage />} />
+          <Route path="services" element={<ServicesPage />} />
+          <Route path="customers" element={<CustomersPage />} />
+          <Route path="appointments" element={<AppointmentsPage />} />
+          <Route path="crm" element={<CRMPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
+        
+      </Route>
 
-        {/* ── Auth + onboarding complete ────────────────────────────────────── */}
-        <Route element={<ProtectedRoute />}>
-  <Route path="/dashboard" element={<DashboardLayout />}>
-    <Route index element={<DashboardHomePage />} />
+      {/* ── Catch-all ─────────────────────────────────────────────────────── */}
+      <Route
+        path="*"
+        element={<NotFoundPage />}
+      />
 
-    <Route
-      path="services"
-      element={<ServicesPage />}
-    />
-
-    <Route
-      path="customers"
-      element={<CustomersPage  />}
-    />
-
-    <Route
-      path="appointments"
-      element={<ComingSoonStub label="Appointments" />}
-    />
-  </Route>
-</Route>
-
-        {/* ── Fallback ─────────────────────────────────────────────────────── */}
-        <Route path="*" element={<Navigate to="/signin" replace />} />
-
-      </Routes>
-   
+    </Routes>
   )
 }

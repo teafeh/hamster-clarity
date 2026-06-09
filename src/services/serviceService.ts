@@ -3,14 +3,15 @@ import { supabase } from '@/lib/supabase'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface Service {
-  id:               string
-  business_id:      string
-  user_id:          string
-  name:             string
-  price:            number
+  id: string
+  business_id: string
+  user_id: string
+  name: string
+  price: number
   duration_minutes: number | null
-  is_active:        boolean
-  created_at:       string
+  is_active: boolean
+  is_available: boolean
+  created_at: string
 }
 
 export interface ServicePayload {
@@ -30,7 +31,7 @@ export const serviceService = {
   async getServicesByBusiness(businessId: string): Promise<Service[]> {
     const { data, error } = await supabase
       .from('services')
-      .select('id, business_id, user_id, name, price, duration_minutes, is_active, created_at')
+      .select('id, business_id, user_id, name, price, duration_minutes, is_active, is_available, created_at')
       .eq('business_id', businessId)
       .eq('is_active', true)
       .order('created_at', { ascending: true })
@@ -52,13 +53,14 @@ export const serviceService = {
     const { data, error } = await supabase
       .from('services')
       .insert({
-        business_id:      businessId,
-        user_id:          userId,
-        name:             payload.name.trim(),
-        price:            payload.price,
-        duration_minutes: payload.duration_minutes ?? null,
-      })
-      .select('id, business_id, user_id, name, price, duration_minutes, is_active, created_at')
+  business_id: businessId,
+  user_id: userId,
+  name: payload.name.trim(),
+  price: payload.price,
+  duration_minutes: payload.duration_minutes ?? null,
+  is_available: true,
+})
+      .select('id, business_id, user_id, name, price, duration_minutes, is_active, is_available, created_at')
       .single()
 
     if (error) throw error
@@ -83,7 +85,7 @@ export const serviceService = {
         duration_minutes: payload.duration_minutes ?? null,
       })
       .eq('id', serviceId)
-      .select('id, business_id, user_id, name, price, duration_minutes, is_active, created_at')
+      .select('id, business_id, user_id, name, price, duration_minutes, is_active, is_available, created_at')
       .single()
 
     if (error) throw error
@@ -92,6 +94,25 @@ export const serviceService = {
     return data
   },
 
+  async toggleAvailability(
+  serviceId: string,
+  isAvailable: boolean
+): Promise<Service> {
+  const { data, error } = await supabase
+    .from('services')
+    .update({
+      is_available: isAvailable,
+    })
+    .eq('id', serviceId)
+    .select('id, business_id, user_id, name, price, duration_minutes, is_active, is_available, created_at')
+    .single()
+
+  if (error) throw error
+  if (!data) throw new Error('Failed to update service availability.')
+
+  return data
+  },
+  
   /**
    * Soft-delete a service by setting is_active = false.
    * The row is retained in the database for future appointment history.

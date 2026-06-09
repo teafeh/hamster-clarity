@@ -16,15 +16,16 @@ const EMPTY_FORM: FormState = { name: '', price: '', duration: '' }
 
 export default function ServicesPage() {
   const {
-    services,
-    loading,
-    submitting,
-    error,
-    clearError,
-    createService,
-    updateService,
-    deleteService,
-  } = useServices()
+  services,
+  loading,
+  submitting,
+  error,
+  clearError,
+  createService,
+  updateService,
+  deleteService,
+  toggleAvailability,
+} = useServices()
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [showForm,        setShowForm]        = useState(false)
@@ -129,6 +130,16 @@ export default function ServicesPage() {
   }
 
   const handleDeleteCancel = () => setConfirmDeleteId(null)
+
+  const handleToggleAvailability = async (
+  serviceId: string,
+  currentAvailability: boolean
+) => {
+  await toggleAvailability(
+    serviceId,
+    !currentAvailability
+  )
+}
 
   // ── Derived ───────────────────────────────────────────────────────────────
 
@@ -428,6 +439,23 @@ export default function ServicesPage() {
                   >
                     {service.name}
                   </p>
+                  <div className="mt-1">
+  <span
+    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+    style={{
+      backgroundColor: service.is_available
+        ? '#ECFDF5'
+        : '#FEF2F2',
+      color: service.is_available
+        ? '#047857'
+        : '#B91C1C',
+    }}
+  >
+    {service.is_available
+      ? 'Available'
+      : 'Unavailable'}
+  </span>
+</div>
                   <div className="flex items-center gap-3 mt-1 flex-wrap">
                     <span className="text-sm font-medium" style={{ color: '#E07B39' }}>
                       ₦{service.price.toLocaleString()}
@@ -472,7 +500,34 @@ export default function ServicesPage() {
                     </div>
                   ) : (
                     // ── Edit + Delete ────────────────────────────────────
-                    <>
+                      <>
+                        
+                        <button
+  onClick={() =>
+    handleToggleAvailability(
+      service.id,
+      service.is_available
+    )
+  }
+  disabled={submitting}
+  className="px-3 py-1.5 rounded text-xs font-medium border transition-colors"
+  style={{
+    borderColor: service.is_available
+      ? '#FECACA'
+      : '#BBF7D0',
+    color: service.is_available
+      ? '#B91C1C'
+      : '#047857',
+    backgroundColor: '#FFFFFF',
+    opacity: submitting ? 0.5 : 1,
+    cursor: submitting ? 'not-allowed' : 'pointer',
+  }}
+>
+  {service.is_available
+    ? 'Make Unavailable'
+    : 'Make Available'}
+                        </button>
+                        
                       <button
                         onClick={() => handleOpenEdit(service)}
                         disabled={submitting}

@@ -5,6 +5,8 @@ import type {
   AppointmentWithRelations,
   AppointmentPayload,
 } from '@/services/appointmentService'
+// AVAILABILITY INTEGRATION
+import { availabilityService } from '@/services/availabilityService'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -16,19 +18,28 @@ interface AppointmentFormProps {
   error:       string | null
   onSuccess:   () => void
   onCancel:    () => void
-  onCreate:    (payload: AppointmentPayload) => Promise<boolean>
+  onCreate: (
+    payload: AppointmentPayload
+  ) => Promise<AppointmentWithRelations | null>
   onUpdate:    (appointmentId: string, payload: AppointmentPayload) => Promise<boolean>
+  initialScheduledAt?: string // Optional pre-fill timestamp from calendar view grid cells
+  // AVAILABILITY INTEGRATION
+  businessId?: string
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface FormState {
-  customerId:      string
-  serviceId:       string
-  date:            string  // 'YYYY-MM-DD' for <input type="date">
-  time:            string  // 'HH:MM' for <input type="time">
+  customerId: string
+  serviceId: string
+  date: string
+  time: string
   durationMinutes: string
-  notes:           string
+  notes: string
+
+  customerStatus: string
+  assignedTo: string
+  leadSource: string
 }
 
 interface FieldErrors {
@@ -39,48 +50,43 @@ interface FieldErrors {
 }
 
 const EMPTY_FORM: FormState = {
-  customerId:      '',
-  serviceId:       '',
-  date:            '',
-  time:            '',
+  customerId: '',
+  serviceId: '',
+  date: '',
+  time: '',
   durationMinutes: '',
-  notes:           '',
+  notes: '',
+
+  customerStatus: 'new',
+  assignedTo: '',
+  leadSource: '',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Extract local date and time strings from a stored timestamptz.
- * new Date() converts UTC to the browser's local timezone, which is
- * the business's timezone for single-timezone deployments.
+ * Extract local YYYY-MM-DD and HH:MM from an ISO string or Date object.
+ * Necessary because HTML inputs expect plain string formats.
  */
-function extractDateTime(scheduledAt: string): { date: string; time: string } {
-  const d = new Date(scheduledAt)
-  const date = [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-')
-  const time = [
-    String(d.getHours()).padStart(2, '0'),
-    String(d.getMinutes()).padStart(2, '0'),
-  ].join(':')
-  return { date, time }
-}
+function parseScheduledAt(isoString: string | null): { date: string; time: string } {
+  if (!isoString) return { date: '', time: '' }
+  try {
+    const d = new Date(isoString)
+    if (isNaN(d.getTime())) return { date: '', time: '' }
 
-/**
- * Combine local date and time strings into a UTC ISO timestamptz.
- * new Date(`${date}T${time}`) is parsed as local time and .toISOString()
- * converts to UTC — the inverse of extractDateTime.
- */
-function combineDateTime(date: string, time: string): string {
-  return new Date(`${date}T${time}`).toISOString()
-}
+    const yyyy = d.getFullYear()
+    const mm   = String(d.getMonth() + 1).padStart(2, '0')
+    const dd   = String(d.getDate()).padStart(2, '0')
+    const hh   = String(d.getHours()).padStart(2, '0')
+    const min  = String(d.getMinutes()).padStart(2, '0')
 
-function formatCustomerName(customer: Customer): string {
-  return customer.last_name
-    ? `${customer.first_name} ${customer.last_name}`
-    : customer.first_name
+    return {
+      date: `${yyyy}-${mm}-${dd}`,
+      time: `${hh}:${min}`,
+    }
+  } catch {
+    return { date: '', time: '' }
+  }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -91,400 +97,478 @@ export default function AppointmentForm({
   services,
   submitting,
   error,
-  onSuccess,
   onCancel,
   onCreate,
   onUpdate,
+  initialScheduledAt,
+  // AVAILABILITY INTEGRATION
+  businessId,
 }: AppointmentFormProps) {
-  const [form,        setForm]        = useState<FormState>(EMPTY_FORM)
+  const isEditMode = !!appointment
+  const firstInputRef = useRef<HTMLSelectElement>(null)
+
+  // ── State ───────────────────────────────────────────────────────────────────
+  const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
-  const isEditMode = appointment !== null
+  // AVAILABILITY INTEGRATION
+  const [availabilitySubmitting, setAvailabilitySubmitting] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null)
 
-  /**
-   * Tracks the last serviceId that triggered a duration auto-fill.
-   * Set to the appointment's service_id on initialisation so the
-   * auto-fill effect skips the initial population and only fires
-   * when the user actively changes the service selection.
-   */
-  const lastAutoFilledServiceId = useRef<string>('')
-
-  // ─── Initialise form when appointment changes ─────────────────────────────
-
+  // ── Sync form state when active appointment or calendar pre-fill changes ───
   useEffect(() => {
     if (appointment) {
-      const { date, time } = extractDateTime(appointment.scheduled_at)
-      const sid = appointment.service_id ?? ''
-      // Mark this service as already seen so the auto-fill effect skips it
-      lastAutoFilledServiceId.current = sid
+      // Edit Mode
+      const { date, time } = parseScheduledAt(appointment.scheduled_at)
       setForm({
-        customerId:      appointment.customer_id,
-        serviceId:       sid,
+  customerId: appointment.customer_id || '',
+  serviceId: appointment.service_id || '',
+  date,
+  time,
+  durationMinutes: appointment.duration_minutes?.toString() || '30',
+  notes: appointment.notes || '',
+
+  customerStatus: appointment.customer_status || 'new',
+  assignedTo: appointment.assigned_to || '',
+  leadSource: appointment.lead_source || '',
+})
+    } else if (initialScheduledAt) {
+      // Create Mode with a cell clicked in a Calendar Grid view
+      const { date, time } = parseScheduledAt(initialScheduledAt)
+      setForm({
+        ...EMPTY_FORM,
         date,
         time,
-        durationMinutes: appointment.duration_minutes != null
-          ? String(appointment.duration_minutes)
-          : '',
-        notes: appointment.notes ?? '',
+        durationMinutes: '30', // standard boilerplate default
       })
     } else {
-      lastAutoFilledServiceId.current = ''
+      // Create Mode fresh
       setForm(EMPTY_FORM)
     }
+
     setFieldErrors({})
-  }, [appointment])
+    // AVAILABILITY INTEGRATION
+    setAvailabilityError(null)
 
-  // ─── Auto-fill duration when service selection changes ────────────────────
+    // Focus treatment for accessible controls mapping
+    setTimeout(() => {
+      firstInputRef.current?.focus()
+    }, 50)
+  }, [appointment, initialScheduledAt])
 
+  // ── Auto-apply default duration when a service is chosen ───────────────────
   useEffect(() => {
-    // Skip if this is the service value we set during initialisation
-    if (form.serviceId === lastAutoFilledServiceId.current) return
-    lastAutoFilledServiceId.current = form.serviceId
-
-    if (!form.serviceId) {
-      setForm((prev) => ({ ...prev, durationMinutes: '' }))
-      return
-    }
-
-    const selected = services.find((s) => s.id === form.serviceId)
-    if (selected?.duration_minutes != null) {
-      setForm((prev) => ({
-        ...prev,
-        durationMinutes: String(selected.duration_minutes),
-      }))
-    } else {
-      setForm((prev) => ({ ...prev, durationMinutes: '' }))
-    }
-  }, [form.serviceId, services])
-
-  // ─── Field helpers ────────────────────────────────────────────────────────
-
-  const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }))
-    if (key in fieldErrors) {
-      setFieldErrors((prev) => ({ ...prev, [key]: undefined }))
-    }
-  }
-
-  // ─── Validation ───────────────────────────────────────────────────────────
-
-  const validate = (): FieldErrors => {
-    const errors: FieldErrors = {}
-
-    if (!form.customerId) {
-      errors.customerId = 'Please select a customer.'
-    }
-    if (!form.date) {
-      errors.date = 'Please select a date.'
-    }
-    if (!form.time) {
-      errors.time = 'Please select a time.'
-    }
-    if (form.durationMinutes.trim() !== '') {
-      const parsed = parseInt(form.durationMinutes, 10)
-      if (isNaN(parsed) || parsed <= 0) {
-        errors.durationMinutes = 'Duration must be a positive whole number.'
+    if (!isEditMode && form.serviceId) {
+      const selectedService = services.find(s => s.id === form.serviceId)
+      if (selectedService && selectedService.duration_minutes) {
+        setForm(prev => ({
+          ...prev,
+          durationMinutes: selectedService.duration_minutes!.toString(),
+        }))
       }
     }
+  }, [form.serviceId, services, isEditMode])
 
-    return errors
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
+
+    // Flush inline validation layout highlights immediately upon modification
+    if (name in fieldErrors) {
+      setFieldErrors(prev => ({ ...prev, [name]: undefined }))
+    }
   }
-
-  // ─── Submit ───────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // AVAILABILITY INTEGRATION
+    if (submitting || availabilitySubmitting) return
 
-    const errors = validate()
+    setFieldErrors({})
+    // AVAILABILITY INTEGRATION
+    setAvailabilityError(null)
+
+    // Client-side synchronous boundaries verification passes
+    const errors: FieldErrors = {}
+    if (!form.customerId) errors.customerId = 'Please select a customer.'
+    if (!form.date)       errors.date       = 'Please pick a date.'
+    if (!form.time)       errors.time       = 'Please pick a time.'
+
+    const duration = parseInt(form.durationMinutes, 10)
+    if (isNaN(duration) || duration <= 0) {
+      errors.durationMinutes = 'Please enter a valid duration.'
+    }
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       return
     }
 
-    setFieldErrors({})
+    try {
+      const combinedDateTimeStr = `${form.date}T${form.time}:00`
+      const targetDate = new Date(combinedDateTimeStr)
+      if (isNaN(targetDate.getTime())) {
+        setFieldErrors({ date: 'Invalid calendar selection sequence.' })
+        return
+      }
 
-    const payload: AppointmentPayload = {
-      customer_id:      form.customerId,
-      service_id: form.serviceId,
-      scheduled_at:     combineDateTime(form.date, form.time),
-      duration_minutes: form.durationMinutes.trim() !== ''
-        ? parseInt(form.durationMinutes, 10)
-        : null,
-      notes: form.notes.trim() || null,
+      const scheduledAt = targetDate.toISOString()
+
+      // AVAILABILITY INTEGRATION
+      const activeBusinessId = appointment?.business_id || businessId || customers[0]?.business_id || ''
+      if (!activeBusinessId) {
+        setAvailabilityError('Could not verify business isolation parameter properties.')
+        return
+      }
+
+      setAvailabilitySubmitting(true)
+
+      const isSlotAvailable = await availabilityService.checkSlotAvailability(
+        activeBusinessId,
+        scheduledAt,
+        duration,
+        appointment?.id
+      )
+      console.log('APPOINTMENT ID:', appointment?.id)
+      console.log('EXCLUDE ID:', appointment?.id)
+      console.log('IS EDIT MODE:', isEditMode)
+
+      setAvailabilitySubmitting(false)
+
+      if (!isSlotAvailable) {
+        setFieldErrors({
+          time: 'This time slot is no longer available. Please choose another time.',
+        })
+        return
+      }
+
+      const payload: AppointmentPayload = {
+  customer_id: form.customerId,
+  service_id: form.serviceId,
+  scheduled_at: scheduledAt,
+  duration_minutes: duration,
+  notes: form.notes.trim() || null,
+
+  customer_status: form.customerStatus,
+  assigned_to: form.assignedTo.trim() || null,
+  lead_source: form.leadSource || null,
+}
+
+      console.log("PAYLOAD ", payload);
+      
+
+      if (isEditMode && appointment) {
+        await onUpdate(appointment.id, payload)
+      } else {
+        await onCreate(payload)
+      }
+    } catch (err: any) {
+      // AVAILABILITY INTEGRATION
+      setAvailabilitySubmitting(false)
+      setAvailabilityError(err?.message || 'An operational error occurred during slot analysis.')
     }
-
-    const success = isEditMode && appointment
-      ? await onUpdate(appointment.id, payload)
-      : await onCreate(payload)
-
-    if (success) onSuccess()
   }
 
-  // ─── Shared input styles ──────────────────────────────────────────────────
-
-  const inputStyle = (hasError: boolean): React.CSSProperties => ({
-    borderColor:     hasError ? '#FECACA' : '#D1D5DB',
-    backgroundColor: '#FFFFFF',
-    color:           '#111111',
-  })
-
-  const onFocusStyle = (
-    e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
-    hasError: boolean
-  ) => { if (!hasError) e.currentTarget.style.borderColor = '#E07B39' }
-
-  const onBlurStyle = (
-    e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
-    hasError: boolean
-  ) => { if (!hasError) e.currentTarget.style.borderColor = '#D1D5DB' }
-
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div
-      className="rounded-lg border p-6"
+      className="p-6 rounded-lg border mb-6 animate-fadeIn"
       style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }}
     >
-      {/* Hook error banner */}
-      {error && (
+      <h3
+        className="text-base font-semibold mb-4"
+        style={{ color: '#111111' }}
+      >
+        {isEditMode ? 'Edit Appointment' : 'Schedule New Appointment'}
+      </h3>
+
+      {/* AVAILABILITY INTEGRATION */}
+      {(error || availabilityError) && (
         <div
-          className="mb-5 px-4 py-3 rounded-md border text-sm"
+          className="p-3 text-sm rounded-md mb-4 font-medium border"
           style={{
             backgroundColor: '#FEF2F2',
-            borderColor:     '#FECACA',
-            color:           '#B91C1C',
+            borderColor:     '#FCA5A5',
+            color:           '#991B1B',
           }}
         >
-          {error}
+          {error || availabilityError}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
 
-        {/* ── Customer ────────────────────────────────────────────────── */}
+        {/* Customer Select Option */}
         <div>
           <label
-            htmlFor="af-customer"
-            className="block text-sm font-medium mb-1.5"
+            className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
             style={{ color: '#374151' }}
           >
             Customer
           </label>
           <select
-            id="af-customer"
+            ref={firstInputRef}
+            name="customerId"
             value={form.customerId}
-            onChange={(e) => setField('customerId', e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-md text-sm border outline-none appearance-none transition-all"
+            onChange={handleChange}
+            // AVAILABILITY INTEGRATION
+            disabled={submitting || availabilitySubmitting}
+            className="w-full px-3 py-2 border rounded-md text-sm outline-none transition-all duration-150 focus:border-gray-400"
             style={{
-              ...inputStyle(!!fieldErrors.customerId),
-              color:           form.customerId ? '#111111' : '#9CA3AF',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-              backgroundRepeat:   'no-repeat',
-              backgroundPosition: 'right 14px center',
-              paddingRight:       '2.5rem',
+              borderColor: fieldErrors.customerId ? '#EF4444' : '#D1D5DB',
+              // AVAILABILITY INTEGRATION
+              backgroundColor: (submitting || availabilitySubmitting) ? '#F9FAFB' : '#FFFFFF',
             }}
-            onFocus={(e) => onFocusStyle(e, !!fieldErrors.customerId)}
-            onBlur={(e)  => onBlurStyle(e,  !!fieldErrors.customerId)}
           >
-            <option value="" disabled>
-              {customers.length === 0
-                ? 'No customers found — add a customer first'
-                : 'Select a customer'}
-            </option>
+            <option value="">-- Choose a customer --</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
-                {formatCustomerName(c)}
-                {c.phone ? ` — ${c.phone}` : ''}
+                {c.first_name} {c.last_name || ''}
               </option>
             ))}
           </select>
           {fieldErrors.customerId && (
-            <p className="mt-1.5 text-xs" style={{ color: '#B91C1C' }}>
+            <p className="text-xs font-medium mt-1 animate-slideDown" style={{ color: '#EF4444' }}>
               {fieldErrors.customerId}
             </p>
           )}
         </div>
 
-        {/* ── Service ─────────────────────────────────────────────────── */}
+        {/* Service Menu Options Dropdown */}
         <div>
           <label
-            htmlFor="af-service"
-            className="block text-sm font-medium mb-1.5"
+            className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
             style={{ color: '#374151' }}
           >
-            Service{' '}
-            <span className="font-normal" style={{ color: '#9CA3AF' }}>
-              (optional)
-            </span>
+            Service Offered
           </label>
           <select
-            id="af-service"
+            name="serviceId"
             value={form.serviceId}
-            onChange={(e) => setField('serviceId', e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-md text-sm border outline-none appearance-none transition-all"
+            onChange={handleChange}
+            // AVAILABILITY INTEGRATION
+            disabled={submitting || availabilitySubmitting}
+            className="w-full px-3 py-2 border rounded-md text-sm outline-none transition-all duration-150 focus:border-gray-400"
             style={{
-              ...inputStyle(false),
-              color:           '#111111',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-              backgroundRepeat:   'no-repeat',
-              backgroundPosition: 'right 14px center',
-              paddingRight:       '2.5rem',
+              borderColor: '#D1D5DB',
+              // AVAILABILITY INTEGRATION
+              backgroundColor: (submitting || availabilitySubmitting) ? '#F9FAFB' : '#FFFFFF',
             }}
-            onFocus={(e) => onFocusStyle(e, false)}
-            onBlur={(e)  => onBlurStyle(e,  false)}
           >
-            <option value="">No service / Walk-in</option>
+            <option value="">-- No service / Walk-in --</option>
             {services.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} — ₦{s.price.toLocaleString()}
+                {s.name} (₦{s.price.toLocaleString()})
               </option>
             ))}
           </select>
         </div>
 
-        {/* ── Date + Time ──────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-          {/* Date */}
+        {/* Grid Timeline Alignment Field Arrays Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label
-              htmlFor="af-date"
-              className="block text-sm font-medium mb-1.5"
+              className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
               style={{ color: '#374151' }}
             >
               Date
             </label>
             <input
-              id="af-date"
               type="date"
+              name="date"
               value={form.date}
-              onChange={(e) => setField('date', e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-md text-sm border outline-none transition-all"
-              style={inputStyle(!!fieldErrors.date)}
-              onFocus={(e) => onFocusStyle(e, !!fieldErrors.date)}
-              onBlur={(e)  => onBlurStyle(e,  !!fieldErrors.date)}
+              onChange={handleChange}
+              // AVAILABILITY INTEGRATION
+              disabled={submitting || availabilitySubmitting}
+              className="w-full px-3 py-2 border rounded-md text-sm outline-none transition-all duration-150 focus:border-gray-400"
+              style={{
+                borderColor: fieldErrors.date ? '#EF4444' : '#D1D5DB',
+                // AVAILABILITY INTEGRATION
+                backgroundColor: (submitting || availabilitySubmitting) ? '#F9FAFB' : '#FFFFFF',
+              }}
             />
             {fieldErrors.date && (
-              <p className="mt-1.5 text-xs" style={{ color: '#B91C1C' }}>
+              <p className="text-xs font-medium mt-1 animate-slideDown" style={{ color: '#EF4444' }}>
                 {fieldErrors.date}
               </p>
             )}
           </div>
 
-          {/* Time */}
           <div>
             <label
-              htmlFor="af-time"
-              className="block text-sm font-medium mb-1.5"
+              className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
               style={{ color: '#374151' }}
             >
-              Time
+              Start Time
             </label>
             <input
-              id="af-time"
               type="time"
+              name="time"
               value={form.time}
-              onChange={(e) => setField('time', e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-md text-sm border outline-none transition-all"
-              style={inputStyle(!!fieldErrors.time)}
-              onFocus={(e) => onFocusStyle(e, !!fieldErrors.time)}
-              onBlur={(e)  => onBlurStyle(e,  !!fieldErrors.time)}
+              onChange={handleChange}
+              // AVAILABILITY INTEGRATION
+              disabled={submitting || availabilitySubmitting}
+              className="w-full px-3 py-2 border rounded-md text-sm outline-none transition-all duration-150 focus:border-gray-400"
+              style={{
+                borderColor: fieldErrors.time ? '#EF4444' : '#D1D5DB',
+                // AVAILABILITY INTEGRATION
+                backgroundColor: (submitting || availabilitySubmitting) ? '#F9FAFB' : '#FFFFFF',
+              }}
             />
             {fieldErrors.time && (
-              <p className="mt-1.5 text-xs" style={{ color: '#B91C1C' }}>
+              <p className="text-xs font-medium mt-1 animate-slideDown" style={{ color: '#EF4444' }}>
                 {fieldErrors.time}
               </p>
             )}
           </div>
 
-        </div>
-
-        {/* ── Duration ────────────────────────────────────────────────── */}
-        <div>
-          <label
-            htmlFor="af-duration"
-            className="block text-sm font-medium mb-1.5"
-            style={{ color: '#374151' }}
-          >
-            Duration{' '}
-            <span className="font-normal" style={{ color: '#9CA3AF' }}>
-              (optional)
-            </span>
-          </label>
-          <div className="relative">
-            <input
-              id="af-duration"
-              type="text"
-              inputMode="numeric"
-              value={form.durationMinutes}
-              onChange={(e) => setField('durationMinutes', e.target.value)}
-              placeholder="e.g. 60"
-              className="w-full pl-3.5 pr-14 py-2.5 rounded-md text-sm border outline-none transition-all"
-              style={inputStyle(!!fieldErrors.durationMinutes)}
-              onFocus={(e) => onFocusStyle(e, !!fieldErrors.durationMinutes)}
-              onBlur={(e)  => onBlurStyle(e,  !!fieldErrors.durationMinutes)}
-            />
-            <span
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs select-none"
-              style={{ color: '#9CA3AF' }}
+          <div>
+            <label
+              className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
+              style={{ color: '#374151' }}
             >
-              mins
-            </span>
+              Duration (mins)
+            </label>
+            <input
+              type="number"
+              name="durationMinutes"
+              min="1"
+              value={form.durationMinutes}
+              onChange={handleChange}
+              // AVAILABILITY INTEGRATION
+              disabled={submitting || availabilitySubmitting}
+              className="w-full px-3 py-2 border rounded-md text-sm outline-none transition-all duration-150 focus:border-gray-400"
+              style={{
+                borderColor: fieldErrors.durationMinutes ? '#EF4444' : '#D1D5DB',
+                // AVAILABILITY INTEGRATION
+                backgroundColor: (submitting || availabilitySubmitting) ? '#F9FAFB' : '#FFFFFF',
+              }}
+            />
+            {fieldErrors.durationMinutes && (
+              <p className="text-xs font-medium mt-1 animate-slideDown" style={{ color: '#EF4444' }}>
+                {fieldErrors.durationMinutes}
+              </p>
+            )}
           </div>
-          {form.serviceId && form.durationMinutes && !fieldErrors.durationMinutes && (
-            <p className="mt-1 text-xs" style={{ color: '#9CA3AF' }}>
-              Auto-filled from selected service. Edit to override.
-            </p>
-          )}
-          {fieldErrors.durationMinutes && (
-            <p className="mt-1.5 text-xs" style={{ color: '#B91C1C' }}>
-              {fieldErrors.durationMinutes}
-            </p>
-          )}
         </div>
 
-        {/* ── Notes ───────────────────────────────────────────────────── */}
+        <div>
+  <label
+    className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
+    style={{ color: '#374151' }}
+  >
+    Customer Status
+  </label>
+
+  <select
+    name="customerStatus"
+    value={form.customerStatus}
+    onChange={handleChange}
+    className="w-full px-3 py-2 border rounded-md text-sm"
+    style={{ borderColor: '#D1D5DB' }}
+  >
+    <option value="new">New Customer</option>
+    <option value="returning">Returning Customer</option>
+  </select>
+        </div>
+        
+
+        <div>
+  <label
+    className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
+    style={{ color: '#374151' }}
+  >
+    Assigned To
+  </label>
+
+  <input
+    type="text"
+    name="assignedTo"
+    value={form.assignedTo}
+    onChange={handleChange}
+    placeholder="e.g. Sarah"
+    className="w-full px-3 py-2 border rounded-md text-sm"
+    style={{ borderColor: '#D1D5DB' }}
+  />
+</div>
+
+        <div>
+  <label
+    className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
+    style={{ color: '#374151' }}
+  >
+    Lead Source
+  </label>
+
+  <select
+    name="leadSource"
+    value={form.leadSource}
+    onChange={handleChange}
+    className="w-full px-3 py-2 border rounded-md text-sm"
+    style={{ borderColor: '#D1D5DB' }}
+  >
+    <option value="">Select source</option>
+    <option value="instagram">Instagram</option>
+    <option value="tiktok">TikTok</option>
+    <option value="referral">Referral</option>
+    <option value="walk_in">Walk In</option>
+    <option value="google">Google</option>
+    <option value="facebook">Facebook</option>
+    <option value="whatsapp">WhatsApp</option>
+    <option value="other">Other</option>
+  </select>
+</div>
+
+        {/* Custom Form Notes textarea */}
         <div>
           <label
-            htmlFor="af-notes"
-            className="block text-sm font-medium mb-1.5"
+            className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
             style={{ color: '#374151' }}
           >
-            Notes{' '}
-            <span className="font-normal" style={{ color: '#9CA3AF' }}>
-              (optional)
-            </span>
+            Internal Notes
           </label>
           <textarea
-            id="af-notes"
+            name="notes"
             rows={3}
             value={form.notes}
-            onChange={(e) => setField('notes', e.target.value)}
-            placeholder="Any notes for this appointment…"
-            className="w-full px-3.5 py-2.5 rounded-md text-sm border outline-none resize-none transition-all"
-            style={inputStyle(false)}
-            onFocus={(e) => onFocusStyle(e, false)}
-            onBlur={(e)  => onBlurStyle(e,  false)}
+            onChange={handleChange}
+            // AVAILABILITY INTEGRATION
+            disabled={submitting || availabilitySubmitting}
+            placeholder="Add any internal contextual comments or details regarding the visit..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none transition-all duration-150 resize-none focus:border-gray-400"
+            style={{
+              borderColor: '#D1D5DB',
+              // AVAILABILITY INTEGRATION
+              backgroundColor: (submitting || availabilitySubmitting) ? '#F9FAFB' : '#FFFFFF',
+            }}
           />
         </div>
 
-        {/* ── Actions ─────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 pt-1">
+        {/* Form Action Controls buttons */}
+        <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
-            disabled={submitting || customers.length === 0}
-            className="px-5 py-2.5 rounded-md text-sm font-semibold transition-opacity flex items-center gap-2"
+            // AVAILABILITY INTEGRATION
+            disabled={submitting || availabilitySubmitting || customers.length === 0}
+            className="px-5 py-2.5 rounded-md text-sm font-semibold text-white transition-opacity flex items-center gap-2"
             style={{
-              backgroundColor: '#111111',
-              color:           '#FAFAF8',
-              opacity:         submitting || customers.length === 0 ? 0.5 : 1,
-              cursor:          submitting || customers.length === 0
+              backgroundColor: '#E07B39',
+              // AVAILABILITY INTEGRATION
+              opacity:         (submitting || availabilitySubmitting || customers.length === 0) ? 0.5 : 1,
+              cursor:          (submitting || availabilitySubmitting || customers.length === 0)
                 ? 'not-allowed'
                 : 'pointer',
             }}
           >
-            {submitting && <Spinner />}
-            {submitting
+            {/* AVAILABILITY INTEGRATION */}
+            {(submitting || availabilitySubmitting) && <Spinner />}
+            {/* AVAILABILITY INTEGRATION */}
+            {(submitting || availabilitySubmitting)
               ? 'Saving…'
               : isEditMode ? 'Save changes' : 'Create appointment'}
           </button>
@@ -492,16 +576,19 @@ export default function AppointmentForm({
           <button
             type="button"
             onClick={onCancel}
-            disabled={submitting}
+            // AVAILABILITY INTEGRATION
+            disabled={submitting || availabilitySubmitting}
             className="px-5 py-2.5 rounded-md text-sm font-medium border transition-colors"
             style={{
               borderColor:     '#D1D5DB',
               color:           '#374151',
               backgroundColor: '#FFFFFF',
-              opacity:         submitting ? 0.5 : 1,
-              cursor:          submitting ? 'not-allowed' : 'pointer',
+              // AVAILABILITY INTEGRATION
+              opacity:         (submitting || availabilitySubmitting) ? 0.5 : 1,
+              cursor:          (submitting || availabilitySubmitting) ? 'not-allowed' : 'pointer',
             }}
-            onMouseEnter={(e) => { if (!submitting) e.currentTarget.style.backgroundColor = '#F9FAFB' }}
+            // AVAILABILITY INTEGRATION
+            onMouseEnter={(e) => { if (!submitting && !availabilitySubmitting) e.currentTarget.style.backgroundColor = '#F9FAFB' }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#FFFFFF' }}
           >
             Cancel
@@ -524,7 +611,7 @@ function Spinner() {
       />
       <path
         className="opacity-75" fill="currentColor"
-        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
       />
     </svg>
   )

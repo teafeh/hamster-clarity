@@ -9,22 +9,23 @@ export interface Business {
   operating_hours: OperatingHours | null
   created_at: string
   updated_at: string
+  slug: string | null
 }
 
 export const businessService = {
   async getBusinessByUserId(userId: string): Promise<Business | null> {
     const { data, error } = await supabase
       .from('businesses')
-      .select('*')
+      .select('id, user_id, name, business_type, operating_hours, created_at, updated_at')
       .eq('user_id', userId)
-      .single()
+      .order('created_at', { ascending: false }) // Sort newest first
+      .limit(1)
 
     if (error) {
-      // PGRST116 = no rows found — not an error for our purposes
-      if (error.code === 'PGRST116') return null
+      console.error('[businessService] PostgREST query failure:', error)
       throw error
     }
 
-    return data as Business
+    return data && data.length > 0 ? (data[0] as Business) : null
   },
 }

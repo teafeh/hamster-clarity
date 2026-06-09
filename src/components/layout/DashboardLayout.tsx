@@ -7,38 +7,29 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { pathname } = useLocation()
 
-  // Close mobile sidebar on route change
+  // Gracefully close mobile sidebar drawer overlay immediately upon navigation
   useEffect(() => {
     setSidebarOpen(false)
   }, [pathname])
 
-  // Load fonts once for the entire dashboard
-  useEffect(() => {
-    const link = document.createElement('link')
-    link.href =
-      'https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap'
-    link.rel = 'stylesheet'
-    document.head.appendChild(link)
-    return () => { document.head.removeChild(link) }
-  }, [])
-
   return (
     <div
-      className="flex h-screen overflow-hidden"
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", backgroundColor: '#FAFAF8' }}
+      className="flex h-screen w-full overflow-hidden bg-[#FAFAF8]"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
     >
-      {/* Sidebar */}
+      {/* Responsive Mobile/Desktop Navigational Drawer */}
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Main column */}
+      {/* Main Content Presentation Column */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar onMenuClick={() => setSidebarOpen(true)} />
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        {/* Isolated Scrollable Target Layout Container */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto focus:outline-none">
+          {/* Sub-routes (e.g. DashboardHomePage, ServicesPage) render directly here */}
           <Outlet />
         </main>
       </div>

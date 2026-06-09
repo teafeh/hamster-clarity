@@ -16,7 +16,9 @@ export interface UseAppointmentsResult {
   submitting:              boolean
   error:                   string | null
   clearError:              () => void
-  createAppointment:       (payload: AppointmentPayload) => Promise<boolean>
+  createAppointment: (
+  payload: AppointmentPayload
+) => Promise<AppointmentWithRelations | null>
   updateAppointment:       (appointmentId: string, payload: AppointmentPayload) => Promise<boolean>
   updateAppointmentStatus: (appointmentId: string, status: AppointmentStatus) => Promise<boolean>
   cancelAppointment:       (appointmentId: string) => Promise<boolean>
@@ -92,34 +94,42 @@ export function useAppointments(): UseAppointmentsResult {
   // ─── Create ──────────────────────────────────────────────────────────────
 
   const createAppointment = async (
-    payload: AppointmentPayload
-  ): Promise<boolean> => {
-    if (!business || !user) {
-      setError('Cannot create an appointment without an active business session.')
-      return false
-    }
-
-    setSubmitting(true)
-    setError(null)
-
-    try {
-      const created = await appointmentService.createAppointment(
-        business.id,
-        user.id,
-        payload
-      )
-      // Append and re-sort — new appointment may not be the last chronologically
-      setAppointments((prev) => sortAppointments([...prev, created]))
-      return true
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to create appointment.'
-      )
-      return false
-    } finally {
-      setSubmitting(false)
-    }
+  payload: AppointmentPayload
+): Promise<AppointmentWithRelations | null> => {
+  if (!business || !user) {
+    setError(
+      'Cannot create an appointment without an active business session.'
+    )
+    return null
   }
+
+  setSubmitting(true)
+  setError(null)
+
+  try {
+    const created = await appointmentService.createAppointment(
+      business.id,
+      user.id,
+      payload
+    )
+
+    setAppointments((prev) =>
+      sortAppointments([...prev, created])
+    )
+
+    return created
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'Failed to create appointment.'
+    )
+
+    return null
+  } finally {
+    setSubmitting(false)
+  }
+}
 
   // ─── Update ──────────────────────────────────────────────────────────────
 

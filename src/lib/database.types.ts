@@ -16,12 +16,16 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          assigned_to: string | null
           business_id: string
           created_at: string
           customer_id: string
+          customer_status: string | null
           duration_minutes: number | null
           id: string
+          lead_source: string | null
           notes: string | null
+          public_token: string | null
           scheduled_at: string
           service_id: string
           status: string
@@ -29,12 +33,16 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assigned_to?: string | null
           business_id: string
           created_at?: string
           customer_id: string
+          customer_status?: string | null
           duration_minutes?: number | null
           id?: string
+          lead_source?: string | null
           notes?: string | null
+          public_token?: string | null
           scheduled_at: string
           service_id: string
           status?: string
@@ -42,12 +50,16 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assigned_to?: string | null
           business_id?: string
           created_at?: string
           customer_id?: string
+          customer_status?: string | null
           duration_minutes?: number | null
           id?: string
+          lead_source?: string | null
           notes?: string | null
+          public_token?: string | null
           scheduled_at?: string
           service_id?: string
           status?: string
@@ -85,6 +97,7 @@ export type Database = {
           id: string
           name: string
           operating_hours: Json
+          slug: string | null
           updated_at: string
           user_id: string
         }
@@ -94,6 +107,7 @@ export type Database = {
           id?: string
           name: string
           operating_hours?: Json
+          slug?: string | null
           updated_at?: string
           user_id: string
         }
@@ -103,6 +117,7 @@ export type Database = {
           id?: string
           name?: string
           operating_hours?: Json
+          slug?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -183,6 +198,7 @@ export type Database = {
           duration_minutes: number | null
           id: string
           is_active: boolean
+          is_available: boolean
           name: string
           price: number
           user_id: string
@@ -193,6 +209,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_active?: boolean
+          is_available?: boolean
           name: string
           price?: number
           user_id: string
@@ -203,6 +220,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_active?: boolean
+          is_available?: boolean
           name?: string
           price?: number
           user_id?: string

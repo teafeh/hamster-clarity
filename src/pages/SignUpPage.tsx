@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function SignUpPage() {
   const { signUp } = useAuth()
@@ -10,6 +11,13 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState('')
+const [showPassword, setShowPassword] = useState(false)
+const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+const passwordsMatch =
+  password === confirmPassword
+
 
   // Load distinctive fonts
   useEffect(() => {
@@ -26,7 +34,12 @@ export default function SignUpPage() {
     setError(null)
 
     if (password.length < 8) {
+      if (password !== confirmPassword) {
+  setError('Passwords do not match.')
+  return
+}
       setError('Password must be at least 8 characters.')
+      
       return
     }
 
@@ -165,35 +178,109 @@ export default function SignUpPage() {
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium mb-1.5"
-                    style={{ color: '#374151' }}
-                  >
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Minimum 8 characters"
-                    className="w-full px-3.5 py-2.5 rounded-md text-sm border outline-none transition-all"
-                    style={{
-                      borderColor: '#D1D5DB',
-                      backgroundColor: '#FFFFFF',
-                      color: '#111111',
-                    }}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = '#E07B39')}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = '#D1D5DB')}
-                  />
-                </div>
+  <label
+    htmlFor="password"
+    className="block text-sm font-medium mb-1.5"
+    style={{ color: '#374151' }}
+  >
+    Password
+  </label>
+
+  <div className="relative">
+    <input
+      id="password"
+      type={showPassword ? 'text' : 'password'}
+      autoComplete="new-password"
+      required
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      placeholder="Minimum 8 characters"
+      className="w-full px-3.5 py-2.5 pr-12 rounded-md text-sm border outline-none transition-all"
+      style={{
+        borderColor: '#D1D5DB',
+        backgroundColor: '#FFFFFF',
+        color: '#111111',
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+    >
+     {showPassword ? (
+  <EyeOff size={18} />
+) : (
+  <Eye size={18} />
+)}
+    </button>
+  </div>
+                  </div>
+                  
+                  <div>
+  <label
+    htmlFor="confirmPassword"
+    className="block text-sm font-medium mb-1.5"
+    style={{ color: '#374151' }}
+  >
+    Confirm Password
+  </label>
+
+  <div className="relative">
+    <input
+      id="confirmPassword"
+      type={showConfirmPassword ? 'text' : 'password'}
+      autoComplete="new-password"
+      required
+      value={confirmPassword}
+      onChange={(e) => setConfirmPassword(e.target.value)}
+      placeholder="Re-enter password"
+      className="w-full px-3.5 py-2.5 pr-12 rounded-md text-sm border outline-none transition-all"
+      style={{
+        borderColor:
+          confirmPassword && !passwordsMatch ? '#EF4444' : '#D1D5DB',
+        backgroundColor: '#FFFFFF',
+        color: '#111111',
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={() =>
+        setShowConfirmPassword(!showConfirmPassword)
+      }
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+    >
+       {showConfirmPassword ? (
+  <EyeOff size={18} />
+) : (
+  <Eye size={18} />
+)}
+    </button>
+  </div>
+
+  {confirmPassword && !passwordsMatch && (
+    <p className="mt-1 text-sm text-red-500">
+      Passwords do not match
+    </p>
+  )}
+
+  {confirmPassword && passwordsMatch && (
+    <p className="mt-1 text-sm text-green-600">
+      Passwords match ✓
+    </p>
+  )}
+</div>
 
                 <button
                   type="submit"
-                  disabled={loading || !email || !password}
+                  disabled={
+  loading ||
+  !email ||
+  !password ||
+  !confirmPassword ||
+  password !== confirmPassword
+}
                   className="w-full py-2.5 px-4 rounded-md text-sm font-semibold transition-opacity flex items-center justify-center gap-2"
                   style={{
                     backgroundColor: '#111111',

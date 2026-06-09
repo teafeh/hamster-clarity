@@ -18,6 +18,10 @@ const BUSINESS_TYPES = [
   'Home Service',
 ] as const
 
+
+
+
+
 interface FieldErrors {
   businessName?: string
   businessType?: string
@@ -29,10 +33,20 @@ export default function Step1BusinessInfo({
   onboarding: any
     }) {
     const { submitStep1, isLoading, error } = onboarding
-    
+
   const [businessName, setBusinessName] = useState('')
-  const [businessType, setBusinessType] = useState('')
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+const [businessType, setBusinessType] = useState('')
+const [searchTerm, setSearchTerm] = useState('')
+const [showSuggestions, setShowSuggestions] = useState(false)
+const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+
+const filteredTypes = BUSINESS_TYPES.filter((type) =>
+  type.toLowerCase().includes(searchTerm.toLowerCase())
+)
+
+const exactMatch = BUSINESS_TYPES.some(
+  (type) => type.toLowerCase() === searchTerm.toLowerCase()
+)
 
   // Load fonts — matches auth pages
   useEffect(() => {
@@ -45,15 +59,20 @@ export default function Step1BusinessInfo({
   }, [])
 
   const validate = (): FieldErrors => {
-    const errors: FieldErrors = {}
-    if (!businessName.trim() || businessName.trim().length < 2) {
-      errors.businessName = 'Business name must be at least 2 characters.'
-    }
-    if (!businessType) {
-      errors.businessType = 'Please select a business type.'
-    }
-    return errors
+  const errors: FieldErrors = {}
+
+  if (!businessName.trim() || businessName.trim().length < 2) {
+    errors.businessName = 'Business name must be at least 2 characters.'
   }
+
+  if (!businessType.trim()) {
+    errors.businessType =
+      'Please select or enter a business type.'
+  }
+
+  return errors
+}
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,7 +86,7 @@ export default function Step1BusinessInfo({
     setFieldErrors({})
     await submitStep1({
   businessName: businessName.trim(),
-  businessType,
+  businessType: businessType.trim(),
 })
   }
 
@@ -156,60 +175,96 @@ export default function Step1BusinessInfo({
         </div>
 
         {/* Business Type */}
-        <div>
-          <label
-            htmlFor="businessType"
-            className="block text-sm font-medium mb-1.5"
-            style={{ color: '#374151' }}
+       <div>
+  <label
+    htmlFor="businessType"
+    className="block text-sm font-medium mb-1.5"
+    style={{ color: '#374151' }}
+  >
+    Business type
+  </label>
+
+  <div className="relative">
+    <input
+      id="businessType"
+      type="text"
+      value={searchTerm}
+      placeholder="Search or enter your business type"
+      className="w-full px-3.5 py-2.5 rounded-md text-sm border outline-none transition-all"
+      style={{
+        borderColor: fieldErrors.businessType
+          ? '#FECACA'
+          : '#D1D5DB',
+        backgroundColor: '#FFFFFF',
+        color: '#111111',
+      }}
+      onChange={(e) => {
+        setSearchTerm(e.target.value)
+        setBusinessType(e.target.value)
+        setShowSuggestions(true)
+
+        if (fieldErrors.businessType) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            businessType: undefined,
+          }))
+        }
+      }}
+      onFocus={() => setShowSuggestions(true)}
+      onBlur={() => {
+        setTimeout(() => setShowSuggestions(false), 150)
+      }}
+    />
+
+    {showSuggestions && searchTerm && (
+      <div
+        className="absolute z-20 mt-1 w-full rounded-md border shadow-lg overflow-hidden"
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderColor: '#E5E7EB',
+        }}
+      >
+        {filteredTypes.map((type) => (
+          <button
+            key={type}
+            type="button"
+            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+            onClick={() => {
+              setBusinessType(type)
+              setSearchTerm(type)
+              setShowSuggestions(false)
+            }}
           >
-            Business type
-          </label>
-          <select
-            id="businessType"
-            required
-            value={businessType}
-            onChange={(e) => {
-              setBusinessType(e.target.value)
-              if (fieldErrors.businessType) {
-                setFieldErrors((prev) => ({ ...prev, businessType: undefined }))
-              }
-            }}
-            className="w-full px-3.5 py-2.5 rounded-md text-sm border outline-none transition-all appearance-none"
-            style={{
-              borderColor: fieldErrors.businessType ? '#FECACA' : '#D1D5DB',
-              backgroundColor: '#FFFFFF',
-              color: businessType ? '#111111' : '#9CA3AF',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 14px center',
-              paddingRight: '2.5rem',
-            }}
-            onFocus={(e) => {
-              if (!fieldErrors.businessType) {
-                e.currentTarget.style.borderColor = '#E07B39'
-              }
-            }}
-            onBlur={(e) => {
-              if (!fieldErrors.businessType) {
-                e.currentTarget.style.borderColor = '#D1D5DB'
-              }
+            {type}
+          </button>
+        ))}
+
+        {!exactMatch && searchTerm.trim() && (
+          <button
+            type="button"
+            className="w-full text-left px-3 py-2 text-sm border-t"
+            style={{ color: '#E07B39' }}
+            onClick={() => {
+              setBusinessType(searchTerm.trim())
+              setShowSuggestions(false)
             }}
           >
-            <option value="" disabled>
-              Select your business type
-            </option>
-            {BUSINESS_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.businessType && (
-            <p className="mt-1.5 text-xs" style={{ color: '#B91C1C' }}>
-              {fieldErrors.businessType}
-            </p>
-          )}
+            Create "{searchTerm}"
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+
+  {fieldErrors.businessType && (
+    <p className="mt-1.5 text-xs" style={{ color: '#B91C1C' }}>
+      {fieldErrors.businessType}
+    </p>
+  )}
         </div>
+        
+
+
 
         {/* Submit */}
         <div className="pt-2">
