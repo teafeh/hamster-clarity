@@ -1,4 +1,5 @@
 import { createContext, useEffect, useState } from 'react'
+import { useRef } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase }    from '@/lib/supabase'
 import { authService } from '@/services/authService'
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const hasInitialized = useRef(false)
 
   // ─── Profile fetch ────────────────────────────────────────────────────────
   //
@@ -50,33 +52,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // setUser / setSession are set before this function is called, so a timeout
   // here only affects profile — it never clears the authenticated user.
 
-  const fetchProfile = async (userId: string): Promise<void> => {
-    try {
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timed out')), 10000)
-      )
+  const fetchProfile = async (
+    userId: string
+  ): Promise<void> => {
+    console.log(
+      '[AuthContext] Fetching profile:',
+      userId
+    )
 
-      const query = supabase
+    try {
+      const { data, error } = await supabase
         .from('profiles')
-        .select('id, onboarding_completed, created_at')
+        .select(
+          'id, onboarding_completed, created_at'
+        )
         .eq('id', userId)
         .single()
 
-      const { data, error } = await Promise.race([query, timeout])
-
       if (error) {
-        console.error('[AuthContext] Profile fetch error:', error.message)
+        console.error(
+          '[AuthContext] Profile fetch error:',
+          error.message
+        )
+
         setProfile(null)
         return
       }
 
+      console.log(
+        '[AuthContext] Profile loaded'
+      )
+
       setProfile(data)
     } catch (err) {
-      console.error('[AuthContext] Profile fetch failed:', err)
+      console.error(
+        '[AuthContext] Profile fetch failed:',
+        err
+      )
+
       setProfile(null)
     }
   }
 
+  
   // Exposed to consumers — called after onboarding completes.
   const refreshProfile = async (): Promise<void> => {
     if (!user) return
@@ -90,6 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log('AUTH EVENT:', event)
+
         if (!mounted) return
 
         // TOKEN_REFRESHED only rotates the JWT — identity and profile unchanged.
@@ -100,10 +120,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
 
+        if (
+          event === 'SIGNED_IN' &&
+          user &&
+          currentSession?.user?.id === user.id
+        ) {
+          console.log(
+            '[AuthContext] Ignoring duplicate SIGNED_IN'
+          )
+
+          setSession(currentSession)
+          return
+        }
+
         // All other events (INITIAL_SESSION, SIGNED_IN, SIGNED_OUT, USER_UPDATED)
         // require full resolution. setLoading(true) here prevents ProtectedRoute
         // from making routing decisions on partially-resolved state.
-        setLoading(true)
+        if (!hasInitialized.current) {
+          setLoading(true)
+        }
+
+        
 
         try {
           // User and session are set immediately — before any async work.
@@ -112,10 +149,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(currentSession)
           setUser(currentSession?.user ?? null)
 
-          if (currentSession?.user) {
-            await fetchProfile(currentSession.user.id)
-          } else {
+          if (!currentSession?.user) {
             setProfile(null)
+          }
+          else if (
+            event === 'INITIAL_SESSION' ||
+            event === 'USER_UPDATED'
+          ) {
+            await fetchProfile(
+              currentSession.user.id
+            )
           }
         } catch (err) {
           console.error('[AuthContext] Auth state change error:', err)
@@ -123,10 +166,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } finally {
           // This is the single point where loading transitions to false.
           // Reached after every event — success, failure, or timeout.
-          if (mounted) setLoading(false)
+          if (mounted) hasInitialized.current = true
+
+          if (mounted) {
+            setLoading(false)
+          }
         }
       }
+      
     )
+
+    
 
     return () => {
       mounted = false
@@ -148,6 +198,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await authService.signOut()
     // onAuthStateChange SIGNED_OUT handles clearing user / session / profile.
   }
+
+  
 
   // ─── Render ───────────────────────────────────────────────────────────────
 

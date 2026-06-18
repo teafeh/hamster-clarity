@@ -93,6 +93,8 @@ export default function PublicBookingPage() {
           }
         )
 
+
+
       const scheduledAt = new Date(
         `${bookingDate}T${bookingTime}`
       ).toISOString()
@@ -105,8 +107,7 @@ export default function PublicBookingPage() {
             customer_id: customer.id,
             service_id: service.id,
             scheduled_at: scheduledAt,
-            duration_minutes:
-              service.duration_minutes,
+            duration_minutes: service.duration_minutes,
             notes: guestForm.notes || null,
 
             customer_status: null,
@@ -114,6 +115,33 @@ export default function PublicBookingPage() {
             lead_source: 'public_booking',
           }
         )
+
+      const { data, error } =
+        await supabase.functions.invoke(
+          "booking-created",
+          {
+            body: {
+              appointmentId: appointment.id,
+              businessId: business.id,
+            },
+          }
+        )
+
+      console.log("[EDGE FUNCTION]", data)
+
+      if (error) {
+        console.error("[EDGE FUNCTION ERROR]", error)
+      }
+
+      console.log(
+        'AUTOMATION TEST',
+        {
+          customer,
+          appointment,
+          service,
+          business,
+        }
+      )
 
       return appointment.id
     } catch (error) {
@@ -146,7 +174,7 @@ export default function PublicBookingPage() {
     return <BookingNotFoundPage />
   }
 
-    return (
+  return (
     <BookingPage
       business={business}
       services={services}

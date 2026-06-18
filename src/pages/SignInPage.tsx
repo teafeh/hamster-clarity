@@ -68,7 +68,7 @@ export default function SignInPage() {
             className="text-sm font-semibold tracking-widest uppercase"
             style={{ color: '#E07B39' }}
           >
-            Operational Clarity
+            Flow by Hamster
           </span>
         </div>
 

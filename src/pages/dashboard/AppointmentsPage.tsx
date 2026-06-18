@@ -5,6 +5,7 @@ import { useServices }          from '@/hooks/useServices'
 import AppointmentForm          from '@/components/customers/appointments/AppointmentForm'
 import AppointmentCard          from '@/components/customers/appointments/AppointmentCard'
 import ScheduleCalendar from '@/components/customers/appointments/ScheduleCalendar'
+import CustomerForm from '@/components/customers/CustomerForm'
 import AppointmentDetailsModal from '@/components/customers/appointments/AppointmentDetailsModal'
 import type {
   AppointmentWithRelations,
@@ -45,15 +46,24 @@ export default function AppointmentsPage() {
     cancelAppointment,
   } = useAppointments()
 
+  
+
   const [selectedAppointment, setSelectedAppointment] =
   useState<AppointmentWithRelations | null>(null)
 
   // Customers and services are needed by AppointmentForm
-  const { customers } = useCustomers()
+  const {
+    customers,
+    submitting: customerSubmitting,
+    error: customerError,
+    createCustomer,
+    updateCustomer,
+  } = useCustomers()
   const { services }  = useServices()
 
   // ── UI state ──────────────────────────────────────────────────────────────
-  const [showForm,            setShowForm]            = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [showCustomerForm, setShowCustomerForm] = useState(false)
   const [editingAppointment,  setEditingAppointment]  = useState<AppointmentWithRelations | null>(null)
   const [confirmingCancelId,  setConfirmingCancelId]  = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('scheduled')
@@ -96,6 +106,10 @@ export default function AppointmentsPage() {
     [appointments]
   )
 
+  const handleCustomerSuccess = () => {
+    setShowCustomerForm(false)
+  }
+
   // ── Derived: header count label ────────────────────────────────────────────
   const countLabel = (() => {
     if (loading) return null
@@ -112,11 +126,14 @@ export default function AppointmentsPage() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
+  // const handleOpenCustomerCreate = () => {
+  //   setShowCustomerForm(true)
+  // }
+
   const handleOpenCreate = () => {
     clearError()
     setConfirmingCancelId(null)
     setEditingAppointment(null)
-    // CALENDAR INTEGRATION: Clear pre-fills if building a plain unmapped entry
     setInitialScheduledAt(null)
     setShowForm(true)
   }
@@ -186,14 +203,19 @@ export default function AppointmentsPage() {
   }
 
   // ── Page labels ────────────────────────────────────────────────────────────
-  const pageTitle = showForm
-    ? (editingAppointment?.id ? 'Edit Appointment' : 'New Appointment')
-    : 'Appointments'
+  const pageTitle =
+    showCustomerForm
+      ? 'New Customer'
+      : showForm
+        ? (editingAppointment?.id ? 'Edit Appointment' : 'New Appointment')
+        : 'Appointments'
 
-  const pageLabel = showForm
-    ? (editingAppointment?.id ? 'Editing' : 'Creating')
-    : 'Manage'
-
+  const pageLabel =
+    showCustomerForm
+      ? 'Creating'
+      : showForm
+        ? (editingAppointment?.id ? 'Editing' : 'Creating')
+        : 'Manage'
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -258,6 +280,8 @@ export default function AppointmentsPage() {
         )}
       </div>
 
+
+
       {/* ── Status tabs — list view only ──────────────────────────────────── */}
       {!showForm && !loading && appointments.length > 0 && viewMode === 'list' && (
         <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 no-scrollbar">
@@ -291,6 +315,7 @@ export default function AppointmentsPage() {
           })}
         </div>
       )}
+
 
       {/* ── Search — list view only ───────────────────────────────────────── */}
       {!showForm && !loading && appointments.length > 0 && viewMode === 'list' && (
@@ -351,7 +376,7 @@ export default function AppointmentsPage() {
 
       {/* ── Content ──────────────────────────────────────────────────────── */}
 
-      {showForm ? (
+      { showForm ? (
 
         <AppointmentForm
           appointment={editingAppointment}
@@ -363,7 +388,7 @@ export default function AppointmentsPage() {
           onCancel={handleFormCancel}
           onCreate={createAppointment}
           onUpdate={updateAppointment}
-          // CALENDAR INTEGRATION: Securely deliver parsed calendar slots down to child hooks
+          onOpenCustomerDrawer={() => setShowCustomerForm(true)}
           initialScheduledAt={initialScheduledAt ?? undefined}
         />
 
@@ -501,6 +526,72 @@ export default function AppointmentsPage() {
           appointment={selectedAppointment}
           onClose={() => setSelectedAppointment(null)}
         />
+      )}
+
+      {showCustomerForm && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={() => setShowCustomerForm(false)}
+          />
+
+          {/* Drawer */}
+          <div
+            className="
+        fixed
+        top-0
+        right-0
+        h-screen
+        w-full
+        max-w-xl
+        bg-white
+        z-50
+        overflow-y-auto
+        shadow-2xl
+      "
+          >
+            <div className="p-6 border-b flex items-center justify-between">
+              <div>
+                <p
+                  className="text-xs font-semibold tracking-widest uppercase"
+                  style={{ color: '#E07B39' }}
+                >
+                  Creating
+                </p>
+
+                <h2
+                  className="text-2xl font-semibold"
+                  style={{
+                    fontFamily: "'Fraunces', serif",
+                    color: '#111111',
+                  }}
+                >
+                  New Customer
+                </h2>
+              </div>
+
+              <button
+                onClick={() => setShowCustomerForm(false)}
+                className="text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6">
+              <CustomerForm
+                customer={null}
+                submitting={customerSubmitting}
+                error={customerError}
+                onSuccess={handleCustomerSuccess}
+                onCancel={() => setShowCustomerForm(false)}
+                onCreate={createCustomer}
+                onUpdate={updateCustomer}
+              />
+            </div>
+          </div>
+        </>
       )}
     </div>
 

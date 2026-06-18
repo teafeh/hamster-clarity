@@ -16,9 +16,9 @@ interface ProtectedRouteProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ProtectedRoute({
-  requireOnboardingComplete = true,
 }: ProtectedRouteProps) {
-  const { user, profile, loading } = useAuth()
+  const { user, loading } = useAuth()
+  console.log('ProtectedRoute loading:', loading)
   const location = useLocation()
 
   // Phase 1 — Auth state is still resolving (session hydration or profile fetch).
@@ -41,15 +41,6 @@ export default function ProtectedRoute({
   // Note: there is intentionally no separate "profile is null → /signin" guard
   // here. An authenticated user with a missing profile should go to onboarding,
   // not be signed out.
-  if (requireOnboardingComplete) {
-    if (!profile?.onboarding_completed) {
-      return <Navigate to="/onboarding" replace />
-    }
-  } else {
-    if (profile?.onboarding_completed) {
-      return <Navigate to="/dashboard" replace />
-    }
-  }
 
   return <Outlet />
 }

@@ -1,13 +1,17 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useBusiness } from '@/hooks/useBusiness'
 import { useCustomers } from '@/hooks/useCustomers'
 import { useServices } from '@/hooks/useServices'
 import { useAppointments } from '@/hooks/useAppointments'
+import { useAuth } from '@/hooks/useAuth'
+import SetupPromptModal from '@/components/onboarding/SetupPromptModal'
+
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DashboardHomePage() {
+  const { profile } = useAuth()
   const { business, loading: businessLoading } = useBusiness()
   const { customers, loading: customersLoading } = useCustomers()
   const { services, loading: servicesLoading } = useServices()
@@ -15,6 +19,19 @@ export default function DashboardHomePage() {
 
   const isGlobalLoading = businessLoading || customersLoading || servicesLoading || appointmentsLoading
   const greeting = getGreeting()
+
+
+
+  const [showSetupPrompt, setShowSetupPrompt] =
+    useState(false)
+
+  useEffect(() => {
+    if (!profile) return
+
+    setShowSetupPrompt(
+      !profile.onboarding_completed
+    )
+  }, [profile])
 
   // ─── Memoized Metric Analytics ──────────────────────────────────────────────
 
@@ -42,8 +59,8 @@ export default function DashboardHomePage() {
       totalServices: services.length,
       totalAppointments: appointments.length,
       upcomingCount: upcoming.length,
-      upcomingList: sortedUpcoming.slice(0, 5),
-      recentCustomers: sortedCustomers.slice(0, 5),
+      upcomingList: sortedUpcoming.slice(0, 3),
+      recentCustomers: sortedCustomers.slice(0, 3),
     }
   }, [customers, services, appointments])
 
@@ -94,10 +111,22 @@ export default function DashboardHomePage() {
     )
   }
 
+
+  console.log(
+    'Dashboard Profile:',
+    profile
+  )
   // ─── Render: Complete Dashboard Dashboard ───────────────────────────────────
 
   return (
+
+    
+    
     <div className="px-6 py-8 max-w-5xl mx-auto w-full space-y-8" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <SetupPromptModal
+        open={showSetupPrompt}
+        onClose={() => setShowSetupPrompt(false)}
+      />
       
       {/* ── Header Row ─────────────────────────────────────────────────────── */}
       <div>
@@ -107,12 +136,10 @@ export default function DashboardHomePage() {
         <h2 className="text-2xl font-semibold" style={{ fontFamily: "'Fraunces', serif", color: '#111111' }}>
           {business?.name ?? 'Your Dashboard'}
         </h2>
-        {business?.business_type && (
-          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>
-            {business.business_type}
-          </p>
-        )}
       </div>
+      
+      
+      
 
       {/* ── Quick Stats Grid ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -266,7 +293,9 @@ export default function DashboardHomePage() {
       </div>
 
     </div>
+  
   )
+  
 }
 
 // ─── Timeline Context Greeter ──────────────────────────────────────────────────

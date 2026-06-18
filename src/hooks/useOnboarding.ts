@@ -66,10 +66,14 @@ export function useOnboarding(): UseOnboardingReturn {
       setIsLoading(true)
       setError(null)
 
-      const newBusinessId = await onboardingService.createBusiness(user.id, {
-        name: data.businessName,
-        business_type: data.businessType,
-      })
+      const newBusinessId =
+  await onboardingService.createBusiness(
+    user,
+    {
+      name: data.businessName,
+      businessType: data.businessType,
+    }
+  )
 
       setBusinessId(newBusinessId)
       setCurrentStep(2)

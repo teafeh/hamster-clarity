@@ -43,18 +43,6 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    label:   'Customers',
-    to:      '/dashboard/customers',
-    enabled: true,
-    icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-      </svg>
-    ),
-  },
-  {
     label:   'Appointments',
     to:      '/dashboard/appointments',
     enabled: true,
@@ -93,10 +81,9 @@ const NAV_ITEMS: NavItem[] = [
       </svg>
     ),
   },
-
   {
-    label: 'Settings',
-    to: '/dashboard/settings',
+    label: 'Automations',
+    to: '/dashboard/automations',
     enabled: true,
     icon: (
       <svg
@@ -107,31 +94,28 @@ const NAV_ITEMS: NavItem[] = [
         stroke="currentColor"
         strokeWidth={1.75}
       >
+        {/* Central node/gear element */}
         <circle cx="12" cy="12" r="3" />
+        {/* Left connected node */}
+        <circle cx="5" cy="12" r="1" />
+        {/* Top right connected node */}
+        <circle cx="18" cy="7" r="1" />
+        {/* Bottom right connected node */}
+        <circle cx="18" cy="17" r="1" />
+        {/* Connecting automation paths */}
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2
-        2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65
-        1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2
-        2 0 01-2 2 2 2 0 01-2-2v-.09a1.65 1.65 0
-        00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2
-        2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65
-        1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2
-        2 0 01-2-2 2 2 0 012-2h.09a1.65 1.65 0
-        001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2
-        2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65
-        1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2
-        2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0
-        001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2
-        2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65
-        1.65 0 00-.33 1.82V9c0 .66.39 1.26 1
-        1.51H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65
-        1.65 0 00-1.51 1z"
+          d="M5 12h4m5 0h4M12 5v4m0 6v4"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M17 8l-3.5 2.5m-3 3L7 16"
         />
       </svg>
     ),
-  },
+  }
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -204,7 +188,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 className="text-xs font-semibold tracking-widest uppercase mb-3"
                 style={{ color: '#E07B39' }}
               >
-                Operational Clarity
+                  Flow by HAMSTER
               </p>
 
               {business ? (

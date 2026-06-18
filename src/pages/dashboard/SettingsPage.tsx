@@ -7,6 +7,9 @@ export default function SettingsPage() {
     const { business, refetch } = useBusiness()
     const [slug, setSlug] = useState('')
 
+    const [operatingHours, setOperatingHours] =
+        useState<any>({})
+    
     const [name, setName] = useState('')
     const [businessType, setBusinessType] =
         useState('')
@@ -26,6 +29,7 @@ export default function SettingsPage() {
                     name,
                     business_type: businessType,
                     slug,
+                    operating_hours: operatingHours,
                 })
                 .eq('id', business.id)
 
@@ -53,7 +57,21 @@ export default function SettingsPage() {
         )
 
         setSlug(business.slug ?? '')
+
+        setOperatingHours(
+            business.operating_hours ?? {}
+        )
     }, [business])
+
+    const DAYS = [
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+    ]
 
 
     return (
@@ -112,19 +130,28 @@ export default function SettingsPage() {
                         />
                     </div>
 
-                    <div className="pt-4">
+                    <div
+                        className="
+        fixed
+        bottom-6
+        right-6
+        z-50
+    "
+                    >
                         <button
                             onClick={handleSave}
                             disabled={saving}
                             className="
-                            px-6
-                            py-3
-                            rounded-lg
-                            text-white
-                            font-medium
-                            bg-[#E07B39]
-                            hover:opacity-90
-                            "
+            px-6
+            py-3
+            rounded-xl
+            text-white
+            font-medium
+            shadow-lg
+            bg-[#E07B39]
+            hover:opacity-90
+            transition-all
+        "
                         >
                             {saving
                                 ? 'Saving...'
@@ -165,6 +192,95 @@ export default function SettingsPage() {
                                 {window.location.origin}/book/{slug}
                             </p>
                         </div>
+
+                        <div className="bg-white border rounded-xl p-6 mt-6">
+    <h2 className="text-lg font-semibold mb-6">
+        Operating Hours
+    </h2>
+
+    <div className="space-y-4">
+        {DAYS.map((day) => (
+            <div
+                key={day}
+                className="
+                    grid
+                    grid-cols-1
+                    md:grid-cols-4
+                    gap-3
+                    items-center
+                "
+            >
+                <div className="font-medium capitalize">
+                    {day}
+                </div>
+
+                <input
+                    type="time"
+                    value={
+                        operatingHours?.[day]?.start ??
+                        '09:00'
+                    }
+                    onChange={(e) =>
+                        setOperatingHours({
+                            ...operatingHours,
+                            [day]: {
+                                ...operatingHours?.[day],
+                                start: e.target.value,
+                            },
+                        })
+                    }
+                    className="border rounded-lg px-3 py-2"
+                />
+
+                <input
+                    type="time"
+                    value={
+                        operatingHours?.[day]?.end ??
+                        '17:00'
+                    }
+                    onChange={(e) =>
+                        setOperatingHours({
+                            ...operatingHours,
+                            [day]: {
+                                ...operatingHours?.[day],
+                                end: e.target.value,
+                            },
+                        })
+                    }
+                    className="border rounded-lg px-3 py-2"
+                />
+
+                <label className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        checked={
+                            operatingHours?.[day]?.open ??
+                            true
+                        }
+                        onChange={(e) =>
+                            setOperatingHours({
+                                ...operatingHours,
+                                [day]: {
+                                    ...operatingHours?.[day],
+                                    open: e.target.checked,
+                                },
+                            })
+                        }
+                    />
+
+                    <span>
+                        {
+                            operatingHours?.[day]?.open
+                                ? 'Open'
+                                : 'Closed'
+                        }
+                    </span>
+                </label>
+            </div>
+        ))}
+    </div>
+                        </div>
+                        
                     </div>
 
 
