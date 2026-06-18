@@ -149,20 +149,20 @@ function RotatingHeadline() {
   }, []);
   const slide = SLIDES[current];
   return (
-    <div style={{ position: "relative", minHeight: "84px", height: "9vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div className="headline-container" style={{ position: "relative", minHeight: "72px", height: "8vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
-          initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+          initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: -12, filter: "blur(2px)" }}
+          exit={{ opacity: 0, y: -10, filter: "blur(2px)" }}
           transition={{ duration: TRANSITION_DURATION, ease: STEP_EASE }}
           style={{ textAlign: "center", width: "100%" }}
         >
           {slide.lines.map((line, i) => (
             <div key={i} style={{
               display: "block",
-              fontSize: "clamp(1.4rem, 3.6vh, 2.6rem)",
+              fontSize: "clamp(1.25rem, 3.4vh, 2.4rem)",
               fontWeight: 700,
               lineHeight: 1.15,
               letterSpacing: "-0.03em",
@@ -181,7 +181,7 @@ function RotatingHeadline() {
 
 function SlideDots({ current, total }: { current: number; total: number }) {
   return (
-    <div style={{ display: "flex", gap: "6px", justifyContent: "center", marginTop: "12px" }}>
+    <div className="slide-dots" style={{ display: "flex", gap: "6px", justifyContent: "center", marginTop: "8px" }}>
       {Array.from({ length: total }).map((_, i) => (
         <div key={i} style={{ width: i === current ? "18px" : "6px", height: "6px", borderRadius: "99px", background: i === current ? "#B85C38" : "#E2DDD5", transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)" }} />
       ))}
@@ -195,7 +195,7 @@ function ProgressBar({ step, total }: { step: WizardStep; total: number }) {
   const pct = ((step - 1) / (total - 1)) * 100;
   const labels = ["Email Address", "Business Vertical", "Referral Source", "Final Step"];
   return (
-    <div style={{ marginBottom: "20px" }}>
+    <div style={{ marginBottom: "16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
         <span style={{ fontSize: "0.68rem", fontWeight: 600, letterSpacing: "0.06em", color: "#A29C95", textTransform: "uppercase" }}>
           Step {step} of {total}
@@ -301,8 +301,8 @@ function OptionGrid({ options, selected, onSelect }: {
       display: "grid",
       gridTemplateColumns: "repeat(2, 1fr)",
       gap: "6px",
-      marginBottom: "16px",
-      maxHeight: "185px",
+      marginBottom: "14px",
+      maxHeight: "155px",
       overflowY: "auto",
       paddingRight: "2px",
     }} className="custom-scrollbar">
@@ -472,6 +472,7 @@ function WaitlistWizard() {
   const emailRef = useRef<HTMLInputElement>(null);
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email);
+  const customInputRef = useRef<HTMLInputElement>(null);
 
   const advance = useCallback(() => { setDirection(1); setStep((s) => Math.min(s + 1, TOTAL_STEPS) as WizardStep); }, []);
   const goBack = useCallback(() => { setDirection(-1); setStep((s) => Math.max(s - 1, 1) as WizardStep); }, []);
@@ -556,30 +557,100 @@ function WaitlistWizard() {
           )}
 
           {step === 2 && (
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+            <div>
               <BackButton onClick={goBack} />
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 600, color: "#1C1A17", marginBottom: "4px", fontFamily: "var(--font-serif)" }}>
+              <h3 style={{ fontSize: "1.02rem", fontWeight: 600, color: "#1C1A17", marginBottom: "0.3rem", fontFamily: "'Georgia', serif" }}>
                 What kind of business do you run?
               </h3>
-              <p style={{ fontSize: "0.8rem", color: "#A29C95", marginBottom: "12px" }}>
-                We'll tailor Flow to your operational environment.
+              <p style={{ fontSize: "0.8rem", color: "#A39E98", marginBottom: "0.9rem" }}>
+                We'll tailor Flow to your world.
               </p>
-              <OptionGrid options={BUSINESS_TYPES} selected={data.businessType} onSelect={(v) => setData((d) => ({ ...d, businessType: v }))} />
-              <PrimaryButton disabled={!data.businessType} onClick={advance}>Continue →</PrimaryButton>
+
+              {/* Safely check if 'Other' is picked or a custom text is actively being typed */}
+              {data.businessType === "Other" || (data.businessType && !BUSINESS_TYPES.some(b => b.label === data.businessType)) ? (
+                <div>
+                  <input
+                    ref={customInputRef}
+                    type="text"
+                    value={data.businessType === "Other" ? "" : data.businessType}
+                    onChange={(e) => setData((d) => ({ ...d, businessType: e.target.value || "Other" }))}
+                    onKeyDown={(e) => { if (e.key === "Enter" && data.businessType.trim() && data.businessType !== "Other") advance(); }}
+                    placeholder="Specify your business type"
+                    autoFocus
+                    style={{
+                      width: "100%", padding: "12px 16px", fontSize: "0.9rem", borderRadius: "10px",
+                      border: "1.5px solid #EAE4DC", background: "#FAFAF9", color: "#1C1A17",
+                      outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: "12px",
+                      transition: "border-color 0.2s, box-shadow 0.2s",
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = "#B85C38"; e.target.style.boxShadow = "0 0 0 3px rgba(184,92,56,0.08)"; }}
+                    onBlur={(e) => { e.target.style.borderColor = "#EAE4DC"; e.target.style.boxShadow = "none"; }}
+                  />
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <PrimaryButton disabled={!data.businessType.trim() || data.businessType === "Other"} onClick={advance}>Continue →</PrimaryButton>
+                    <button
+                      onClick={() => setData((d) => ({ ...d, businessType: "" }))}
+                      style={{ background: "none", border: "none", color: "#A29C95", fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <OptionGrid options={BUSINESS_TYPES} selected={data.businessType} onSelect={(v) => setData((d) => ({ ...d, businessType: v }))} />
+                  <PrimaryButton disabled={!data.businessType} onClick={advance}>Continue →</PrimaryButton>
+                </>
+              )}
             </div>
           )}
 
           {step === 3 && (
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+            <div>
               <BackButton onClick={goBack} />
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 600, color: "#1C1A17", marginBottom: "4px", fontFamily: "var(--font-serif)" }}>
+              <h3 style={{ fontSize: "1.02rem", fontWeight: 600, color: "#1C1A17", marginBottom: "0.3rem", fontFamily: "'Georgia', serif" }}>
                 How did you hear about Flow?
               </h3>
-              <p style={{ fontSize: "0.8rem", color: "#A29C95", marginBottom: "12px" }}>
-                Helps us identify where our community originates.
+              <p style={{ fontSize: "0.8rem", color: "#A39E98", marginBottom: "0.9rem" }}>
+                Helps us understand where to show up.
               </p>
-              <OptionGrid options={REFERRAL_SOURCES} selected={data.referralSource} onSelect={(v) => setData((d) => ({ ...d, referralSource: v }))} />
-              <PrimaryButton disabled={!data.referralSource} onClick={advance}>Continue →</PrimaryButton>
+
+              {/* Safely check if 'Other' is picked or a custom text is actively being typed */}
+              {data.referralSource === "Other" || (data.referralSource && !REFERRAL_SOURCES.some(r => r.label === data.referralSource)) ? (
+                <div>
+                  <input
+                    ref={customInputRef}
+                    type="text"
+                    value={data.referralSource === "Other" ? "" : data.referralSource}
+                    onChange={(e) => setData((d) => ({ ...d, referralSource: e.target.value || "Other" }))}
+                    onKeyDown={(e) => { if (e.key === "Enter" && data.referralSource.trim() && data.referralSource !== "Other") advance(); }}
+                    placeholder="Tell us where you found us"
+                    autoFocus
+                    style={{
+                      width: "100%", padding: "12px 16px", fontSize: "0.9rem", borderRadius: "10px",
+                      border: "1.5px solid #EAE4DC", background: "#FAFAF9", color: "#1C1A17",
+                      outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: "12px",
+                      transition: "border-color 0.2s, box-shadow 0.2s",
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = "#B85C38"; e.target.style.boxShadow = "0 0 0 3px rgba(184,92,56,0.08)"; }}
+                    onBlur={(e) => { e.target.style.borderColor = "#EAE4DC"; e.target.style.boxShadow = "none"; }}
+                  />
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <PrimaryButton disabled={!data.referralSource.trim() || data.referralSource === "Other"} onClick={advance}>Continue →</PrimaryButton>
+                    <button
+                      onClick={() => setData((d) => ({ ...d, referralSource: "" }))}
+                      style={{ background: "none", border: "none", color: "#A29C95", fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <OptionGrid options={REFERRAL_SOURCES} selected={data.referralSource} onSelect={(v) => setData((d) => ({ ...d, referralSource: v }))} />
+                  <PrimaryButton disabled={!data.referralSource} onClick={advance}>Continue →</PrimaryButton>
+                </>
+              )}
             </div>
           )}
 
@@ -696,6 +767,51 @@ export default function ComingSoon() {
           background: #D5CFC6;
         }
 
+        /* Responsive UI Adjustments based on mobile canvas review */
+        @media (max-width: 600px) {
+          header {
+            padding: 16px 20px !important;
+          }
+          main {
+            padding: 0 20px !important;
+          }
+          .main-stack {
+            gap: 10px !important;
+          }
+          .badge-container {
+            transform: scale(0.9);
+          }
+          .headline-container {
+            height: auto !important;
+            min-height: 56px !important;
+            margin-bottom: 4px;
+          }
+          .slide-dots {
+            margin-top: 4px !important;
+          }
+          .subtext-para {
+            font-size: 0.8rem !important;
+            line-height: 1.4 !important;
+            margin-bottom: 2px !important;
+          }
+          .wizard-card-box {
+            padding: 18px 16px !important;
+            min-height: auto !important;
+          }
+          .floating-mascot-bottom {
+            display: none !important;
+          }
+          footer {
+            padding: 16px 20px !important;
+          }
+          .footer-text-stack {
+            gap: 8px !important;
+          }
+          .footer-divider {
+            height: 8px !important;
+          }
+        }
+
         @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
       `}</style>
 
@@ -703,7 +819,7 @@ export default function ComingSoon() {
         <BackgroundGradients />
         <GrainOverlay />
 
-        {/* Dynamic Desktop Canvas Background Watermark */}
+        {/* Dynamic Background Watermark */}
         <motion.div aria-hidden="true" style={{ position: "fixed", right: "-4vw", bottom: "-4vw", width: "32vw", maxWidth: "480px", opacity: 0.035, pointerEvents: "none", zIndex: 0, color: "#5A3020", x: springX, y: springY }}>
           <HamsterMascot />
         </motion.div>
@@ -727,11 +843,11 @@ export default function ComingSoon() {
         {/* ── Main Viewport Wrapper ── */}
         <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 40px", position: "relative", zIndex: 10, textAlign: "center", minHeight: 0, overflow: "hidden" }}>
 
-          {/* Main layout card wrapper to guarantee non-scroll configuration layout constraints */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", width: "100%", maxWidth: "460px" }}>
+          {/* Main layout container stack */}
+          <div className="main-stack" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", width: "100%", maxWidth: "460px" }}>
 
             {/* Badge Element */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+            <motion.div className="badge-container" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(184,92,56,0.06)", border: "1px solid rgba(184,92,56,0.15)", borderRadius: "99px", padding: "4px 12px" }}>
                 <span style={{ fontSize: "0.7rem" }}>🚀</span>
                 <span style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", color: "#B85C38", textTransform: "uppercase" }}>Flow by Hamster</span>
@@ -746,6 +862,7 @@ export default function ComingSoon() {
 
             {/* Secondary Copy Text */}
             <motion.p
+              className="subtext-para"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2 }}
@@ -754,8 +871,9 @@ export default function ComingSoon() {
               Join founders and service business owners gaining early access to the future of operations.
             </motion.p>
 
-            {/* Core Interactive Wizard Engine Box Container */}
+            {/* Core Card Container */}
             <motion.div
+              className="wizard-card-box"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.25 }}
@@ -767,7 +885,7 @@ export default function ComingSoon() {
                 padding: "24px",
                 textAlign: "left",
                 boxShadow: "0 10px 35px rgba(40,30,20,0.04), 0 1px 3px rgba(0,0,0,0.01)",
-                minHeight: "330px",
+                minHeight: "310px",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
@@ -776,8 +894,9 @@ export default function ComingSoon() {
               <WaitlistWizard />
             </motion.div>
 
-            {/* Passive Visual Feedback Asset */}
+            {/* Passive Mascot Accent (Hidden on small mobile devices to maximize space) */}
             <motion.div
+              className="floating-mascot-bottom"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.35 }}
@@ -798,13 +917,13 @@ export default function ComingSoon() {
           style={{ flexShrink: 0, padding: "24px 40px", borderTop: "1px solid rgba(180,165,150,0.12)", position: "relative", zIndex: 10 }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+            <div className="footer-text-stack" style={{ display: "flex", gap: "16px", alignItems: "center" }}>
               <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "#A29C95" }}>Launching soon</span>
-              <span style={{ width: "1px", height: "10px", background: "#E6E1DA" }} />
+              <span className="footer-divider" style={{ width: "1px", height: "10px", background: "#E6E1DA" }} />
               <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "#A29C95" }}>Built in Nigeria 🇳🇬</span>
             </div>
 
-            <nav aria-label="Footer social dynamic links tracking map engine">
+            <nav aria-label="Footer social navigation links">
               <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
                 {SOCIAL_LINKS.map((social) => (
                   <a
@@ -814,7 +933,7 @@ export default function ComingSoon() {
                     rel="noopener noreferrer"
                     style={{
                       color: "#969088",
-                      transition: "color .2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease",
+                      transition: "color .2s cubic-bezier(0.16, 1, 0.3, 1)",
                       display: "flex",
                       alignItems: "center",
                     }}
