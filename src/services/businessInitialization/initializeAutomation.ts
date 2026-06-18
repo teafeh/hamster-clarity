@@ -1,4 +1,4 @@
-import { automationService } from '../../../supabase/functions/booking-created/services/automationService'
+import { automationService } from "../automationService";
 
 export async function initializeAutomation(
   businessId: string

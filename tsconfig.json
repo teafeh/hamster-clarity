@@ -26,6 +26,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "src/services/automation/email", "src/services/automation/engine", "supabase/functions/booking-created/services/bookingConfirmationService.ts", "supabase/functions/booking-created/workflows/bookingConfirmationWorkflow.ts", "supabase/functions/booking-created/services/automationService.ts"],
+"include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
