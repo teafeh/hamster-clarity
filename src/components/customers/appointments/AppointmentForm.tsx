@@ -25,6 +25,7 @@ interface AppointmentFormProps {
   initialScheduledAt?: string // Optional pre-fill timestamp from calendar view grid cells
   // AVAILABILITY INTEGRATION
   businessId?: string
+  onOpenCustomerDrawer: () => void
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -100,6 +101,7 @@ export default function AppointmentForm({
   onCancel,
   onCreate,
   onUpdate,
+  onOpenCustomerDrawer,
   initialScheduledAt,
   // AVAILABILITY INTEGRATION
   businessId,
@@ -110,7 +112,16 @@ export default function AppointmentForm({
   // ── State ───────────────────────────────────────────────────────────────────
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+  const [customerSearch, setCustomerSearch] = useState('')
+  const [selectedCustomerName, setSelectedCustomerName] = useState('')
 
+
+  const filteredCustomers = customers.filter((customer) => {
+    const fullName =
+      `${customer.first_name} ${customer.last_name || ''}`.toLowerCase()
+
+    return fullName.includes(customerSearch.toLowerCase())
+  })
   // AVAILABILITY INTEGRATION
   const [availabilitySubmitting, setAvailabilitySubmitting] = useState(false)
   const [availabilityError, setAvailabilityError] = useState<string | null>(null)
@@ -175,7 +186,19 @@ export default function AppointmentForm({
     e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value }))
+
+    if (name === 'customerId') {
+      setForm(prev => ({
+        ...prev,
+        customerId: value,
+        customerStatus: value ? 'returning' : 'new',
+      }))
+    } else {
+      setForm(prev => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
 
     // Flush inline validation layout highlights immediately upon modification
     if (name in fieldErrors) {
@@ -303,35 +326,109 @@ export default function AppointmentForm({
 
       <form onSubmit={handleSubmit} className="space-y-4">
 
+
         {/* Customer Select Option */}
         <div>
-          <label
-            className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
-            style={{ color: '#374151' }}
+          <input
+            type="text"
+            placeholder="Search customer..."
+            value={customerSearch}
+            onChange={(e) => setCustomerSearch(e.target.value)}
+            className="w-full px-3 py-2 mb-2 border rounded-md text-sm"
+            style={{ borderColor: '#D1D5DB' }}
+          />
+
+          {form.customerId && (
+            <button
+              type="button"
+              onClick={() => {
+                setCustomerSearch('')
+                setSelectedCustomerName('')
+
+                setForm(prev => ({
+                  ...prev,
+                  customerId: '',
+                }))
+              }}
+              className="mt-2 text-sm text-orange-500"
+            >
+              Change customer
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onOpenCustomerDrawer}
+            className="mt-2 text-sm font-medium"
+            style={{ color: '#E07B39' }}
           >
-            Customer
-          </label>
-          <select
-            ref={firstInputRef}
-            name="customerId"
-            value={form.customerId}
-            onChange={handleChange}
-            // AVAILABILITY INTEGRATION
-            disabled={submitting || availabilitySubmitting}
-            className="w-full px-3 py-2 border rounded-md text-sm outline-none transition-all duration-150 focus:border-gray-400"
-            style={{
-              borderColor: fieldErrors.customerId ? '#EF4444' : '#D1D5DB',
-              // AVAILABILITY INTEGRATION
-              backgroundColor: (submitting || availabilitySubmitting) ? '#F9FAFB' : '#FFFFFF',
-            }}
-          >
-            <option value="">-- Choose a customer --</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.first_name} {c.last_name || ''}
-              </option>
-            ))}
-          </select>
+            + Create New Customer
+          </button>
+
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search customer..."
+              value={customerSearch}
+              onChange={(e) => setCustomerSearch(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+            />
+
+            {customerSearch.trim() &&
+              customerSearch !== selectedCustomerName && (
+              <div
+                className="
+        absolute
+        z-50
+        mt-1
+        w-full
+        bg-white
+        border
+        rounded-md
+        shadow-lg
+        max-h-60
+        overflow-y-auto
+      "
+              >
+                {filteredCustomers.length > 0 ? (
+                  filteredCustomers.map((customer) => (
+                    <button
+                      key={customer.id}
+                      type="button"
+                      onClick={() => {
+                        const fullName =
+                          `${customer.first_name} ${customer.last_name || ''}`.trim()
+
+                        setCustomerSearch(fullName)
+                        setSelectedCustomerName(fullName)
+
+                        setForm(prev => ({
+                          ...prev,
+                          customerId: customer.id,
+                        }))
+                      }}
+                      className="
+              w-full
+              text-left
+              px-3
+              py-2
+              hover:bg-gray-100
+            "
+                    >
+                      {customer.first_name} {customer.last_name}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-sm text-gray-500">
+                    No customer found
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          
+
           {fieldErrors.customerId && (
             <p className="text-xs font-medium mt-1 animate-slideDown" style={{ color: '#EF4444' }}>
               {fieldErrors.customerId}
@@ -457,25 +554,7 @@ export default function AppointmentForm({
           </div>
         </div>
 
-        <div>
-  <label
-    className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
-    style={{ color: '#374151' }}
-  >
-    Customer Status
-  </label>
 
-  <select
-    name="customerStatus"
-    value={form.customerStatus}
-    onChange={handleChange}
-    className="w-full px-3 py-2 border rounded-md text-sm"
-    style={{ borderColor: '#D1D5DB' }}
-  >
-    <option value="new">New Customer</option>
-    <option value="returning">Returning Customer</option>
-  </select>
-        </div>
         
 
         <div>

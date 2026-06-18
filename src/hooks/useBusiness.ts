@@ -23,7 +23,18 @@ export function useBusiness(): UseBusinessResult {
   const loadBusinessData = async (currentUserId: string, seqId: number) => {
     try {
       setError(null)
-      const data = await businessService.getBusinessByUserId(currentUserId)
+      const businesses =
+  await businessService.getBusinessesByUserId(currentUserId)
+
+const activeBusinessId =
+  localStorage.getItem('activeBusinessId')
+
+const data =
+  businesses.find(
+    (b) => b.id === activeBusinessId
+  ) ??
+  businesses[0] ??
+  null
       
       if (seqId === sequenceIdRef.current) {
         setBusiness(data)

@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
+import { businessService } from './businessService'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,22 +39,31 @@ export const onboardingService = {
    * Step 1 — Create the business record.
    * Returns the new business ID, which must be passed to subsequent steps.
    */
-  async createBusiness(userId: string, payload: BusinessPayload): Promise<string> {
-    const { data, error } = await supabase
-      .from('businesses')
-      .insert({
-        user_id:       userId,
-        name:          payload.name.trim(),
-        business_type: payload.business_type.trim(),
-      })
-      .select('id')
-      .single()
+ async createBusiness(
+  user: User,
+  payload: {
+    name: string
+    businessType: string
+  }
+): Promise<string> {
 
-    if (error) throw error
-    if (!data) throw new Error('Business was not created. No data returned.')
+  const existing =
+    await businessService.getBusinessByUserId(
+      user.id
+    )
 
-    return data.id
-  },
+  if (existing) {
+    return existing.id
+  }
+
+  const business =
+    await businessService.createBusiness(
+      user,
+      payload
+    )
+
+  return business.id
+},
 
   /**
    * Step 2 — Persist operating hours against an existing business row.

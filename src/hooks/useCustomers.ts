@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth }          from '@/hooks/useAuth'
-import { useBusiness }      from '@/hooks/useBusiness'
+import { useBusiness } from '@/hooks/useBusiness'
 import { customerService }  from '@/services/customerService'
 import type { Customer, CustomerPayload } from '@/services/customerService'
 
@@ -113,7 +113,16 @@ export function useCustomers(): UseCustomersResult {
     setError(null)
 
     try {
-      const created = await customerService.createCustomer(business.id, user.id, payload)
+      const created = await customerService.createCustomer(
+  business.id,
+  user.id,
+  payload
+)
+
+// await customerEvents.onCreated({
+//   business,
+//   customer: created,
+// })
       // Append and re-sort to maintain alphabetical order
       setCustomers((prev) => sortCustomers([...prev, created]))
       return true

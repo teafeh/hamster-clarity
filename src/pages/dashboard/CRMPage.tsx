@@ -2,10 +2,25 @@ import { useState } from 'react'
 import { useCustomers } from '@/hooks/useCustomers'
 import type { Customer } from '@/services/customerService'
 import { useAppointments } from '@/hooks/useAppointments'
+import CustomerForm from '@/components/customers/CustomerForm'
 
 
 export default function CRMPage() {
-    const { customers, loading } = useCustomers()
+    const {
+        customers,
+        loading,
+        createCustomer,
+        updateCustomer,
+        archiveCustomer,
+        submitting,
+        error,
+    } = useCustomers()
+
+    const [showCustomerForm, setShowCustomerForm] =
+        useState(false)
+
+    const [editingCustomer, setEditingCustomer] =
+        useState<Customer | null>(null)
     const { appointments } = useAppointments()
 
     const [selectedCustomer, setSelectedCustomer] =
@@ -54,10 +69,40 @@ export default function CRMPage() {
                     selectedCustomer.id
             )
             : []
+    
+
+    const customerRevenue =
+        customerAppointments.reduce((total, appointment) => {
+            if (appointment.status !== 'completed') return total
+
+            return total + (appointment.service?.price ?? 0)
+        }, 0)
+    
+    const handleEditCustomer = (customer: Customer) => {
+        setEditingCustomer(customer)
+        setShowCustomerForm(true)
+    }
+
+    const handleArchiveCustomer = async (
+        customerId: string
+    ) => {
+        const confirmed = window.confirm(
+            'Archive this customer?'
+        )
+
+        if (!confirmed) return
+
+        await archiveCustomer(customerId)
+
+        if (selectedCustomer?.id === customerId) {
+            setSelectedCustomer(null)
+        }
+    }
+    
 
 
     return (
-        
+
         <div className="p-6 lg:p-8">
             {/* Header */}
             <div className="mb-8">
@@ -65,7 +110,7 @@ export default function CRMPage() {
                     className="text-xs font-semibold tracking-widest uppercase mb-3"
                     style={{ color: '#E07B39' }}
                 >
-                    CRM
+                    Manage
                 </p>
 
                 <h1
@@ -82,6 +127,68 @@ export default function CRMPage() {
                     Track customer information and relationships.
                 </p>
             </div>
+
+            <button
+                onClick={() => {
+                    setEditingCustomer(null)
+                    setShowCustomerForm(true)
+                }}
+                className="
+    px-4
+    py-2
+    rounded-xl
+    bg-[#E07B39]
+    text-white
+    font-medium
+    mb-6
+  "
+            >
+                + Add Customer
+            </button>
+
+
+            {showCustomerForm && (
+                <div
+                    className="
+      fixed
+      inset-0
+      bg-black/40
+      flex
+      items-center
+      justify-center
+      z-50
+      p-4
+    "
+                >
+                    <div
+                        className="
+        bg-white
+        rounded-2xl
+        p-6
+        w-full
+        max-w-2xl
+      "
+                    >
+                    
+                        <CustomerForm
+                            customer={editingCustomer}
+                            submitting={submitting}
+                            error={error}
+                            onCreate={createCustomer}
+                            onUpdate={updateCustomer}
+                            onSuccess={() => {
+                                setShowCustomerForm(false)
+                                setEditingCustomer(null)
+                            }}
+                            onCancel={() => {
+                                setShowCustomerForm(false)
+                                setEditingCustomer(null)
+                            }}
+                        />
+
+                    </div>
+                </div>
+            )}
 
             {/* Search */}
 
@@ -138,6 +245,8 @@ export default function CRMPage() {
                     </h3>
                 </div>
             </div>
+
+            
 
 
             <div className="mb-6">
@@ -224,19 +333,16 @@ export default function CRMPage() {
                                                 key={customer.id}
                                                 onClick={() => setSelectedCustomer(customer)}
                                                 className="
-      border-b
-      border-gray-100
-      hover:bg-gray-50
-      cursor-pointer
-    "
+    border-b
+    border-gray-100
+    hover:bg-gray-50
+    cursor-pointer
+  "
                                             >
                                                 <td className="px-6 py-4">
-                                                    <div>
-                                                        <p className="font-medium text-gray-900">
-                                                            {customer.first_name}{' '}
-                                                            {customer.last_name ?? ''}
-                                                        </p>
-                                                    </div>
+                                                    <p className="font-medium text-gray-900">
+                                                        {customer.first_name} {customer.last_name ?? ''}
+                                                    </p>
                                                 </td>
 
                                                 <td className="px-6 py-4 text-gray-600">
@@ -248,11 +354,38 @@ export default function CRMPage() {
                                                 </td>
 
                                                 <td className="px-6 py-4 text-gray-600">
-                                                    {new Date(
-                                                        customer.created_at
-                                                    ).toLocaleDateString()}
+                                                    {new Date(customer.created_at).toLocaleDateString()}
+                                                </td>
+
+                                                <td className="px-6 py-4">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleEditCustomer(customer)
+                                                            }}
+                                                            className="px-3 py-1.5 rounded text-xs font-medium border"
+                                                        >
+                                                            Edit
+                                                        </button>
+
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleArchiveCustomer(customer.id)
+                                                            }}
+                                                            className="px-3 py-1.5 rounded text-xs font-medium border"
+                                                            style={{
+                                                                borderColor: '#FDE68A',
+                                                                color: '#B45309',
+                                                            }}
+                                                        >
+                                                            Archive
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
+                                            
                                         ))
                             )}
                         </tbody>
@@ -346,7 +479,7 @@ overflow-hidden
                                     </p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-3 gap-3">
                                     <div className="border rounded-lg p-3">
                                         <p className="text-xs text-gray-500">
                                             Appointments
@@ -354,6 +487,16 @@ overflow-hidden
 
                                         <p className="text-xl font-bold">
                                             {customerAppointments.length}
+                                        </p>
+                                    </div>
+
+                                    <div className="border rounded-lg p-3">
+                                        <p className="text-xs text-gray-500">
+                                            Revenue
+                                        </p>
+
+                                        <p className="text-xl font-bold">
+                                            ₦{customerRevenue.toLocaleString()}
                                         </p>
                                     </div>
 

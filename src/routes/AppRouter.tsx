@@ -13,8 +13,9 @@ import PublicAppointmentPage from '@/pages/public/PublicAppointmentPage'
 import BookingSuccessPage from '@/pages/public/BookingSuccessPage'
 import PublicBookingPage from '@/pages/public/PublicBookingPage'
 import NotFoundPage from '../pages/NotFoundPage'
-import CRMPage from '@/pages/CRMPage'
+import CRMPage from '@/pages/dashboard/CRMPage'
 import SettingsPage from '@/pages/dashboard/SettingsPage'
+import AutomationsPage from '@/pages/dashboard/AutomationsPage'
 
 export default function AppRouter() {
   return (
@@ -47,8 +48,11 @@ export default function AppRouter() {
 
 
       {/* ── Auth required — onboarding not yet complete ───────────────────── */}
-      <Route element={<ProtectedRoute requireOnboardingComplete={false} />}>
-        <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route
+          path="/onboarding"
+          element={<OnboardingPage />}
+        />
       </Route>
 
       {/* ── Auth required — onboarding must be complete ───────────────────── */}
@@ -60,6 +64,7 @@ export default function AppRouter() {
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="crm" element={<CRMPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="automations" element={<AutomationsPage />} />
         </Route>
         
       </Route>
