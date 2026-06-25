@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import { BsTwitterX, BsInstagram, BsTiktok, BsLinkedin } from "react-icons/bs";
 import { supabase } from "@/lib/supabase";
+import Hamsterlogo from "../../public/animations/Hamster.svg";
 import Hamster from "../../public/animations/Hamster.svg";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -114,6 +115,17 @@ function HamsterMascot({ className = "" }: { className?: string }) {
       <ellipse cx="26" cy="98" rx="7" ry="5" fill="currentColor" />
       <ellipse cx="94" cy="98" rx="7" ry="5" fill="currentColor" />
     </svg>
+  );
+}
+
+function BrandLogo({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <img
+      src="/logo/flowbyhamster.png"
+      alt="Flow Logo"
+      className={className}
+      style={{ objectFit: "contain", ...style }}
+    />
   );
 }
 
@@ -592,7 +604,7 @@ function WaitlistWizard() {
                       onClick={() => setData((d) => ({ ...d, businessType: "" }))}
                       style={{ background: "none", border: "none", color: "#A29C95", fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}
                     >
-                      Reset
+                      Change option
                     </button>
                   </div>
                 </div>
@@ -641,7 +653,7 @@ function WaitlistWizard() {
                       onClick={() => setData((d) => ({ ...d, referralSource: "" }))}
                       style={{ background: "none", border: "none", color: "#A29C95", fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}
                     >
-                      Reset
+                      Change option
                     </button>
                   </div>
                 </div>
@@ -654,6 +666,7 @@ function WaitlistWizard() {
             </div>
           )}
 
+          
           {step === 4 && (
             <div style={{ textAlign: "center" }}>
               <BackButton onClick={goBack} />
@@ -829,15 +842,41 @@ export default function ComingSoon() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          style={{ flexShrink: 0, padding: "20px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 10 }}
+          style={{
+            flexShrink: 0,
+            // Reduced horizontal padding to 20px so it breathes beautifully on mobile
+            padding: "20px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            position: "relative",
+            zIndex: 10,
+            // Optional: sets a max-width for desktop so it doesn't stretch infinitely
+            width: "100%",
+            maxWidth: "1200px",
+            margin: "0 auto"
+          }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "22px", height: "22px", color: "#B85C38", flexShrink: 0 }}>
-              <HamsterMascot />
-            </div>
-            <span style={{ fontSize: "0.85rem", fontWeight: 700, letterSpacing: "0.06em", color: "#1C1A17" }}>HAMSTER</span>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            {/* Slightly tuned down the width to 115px so it fits gracefully on mobile devices */}
+            <BrandLogo style={{ width: "115px", height: "auto" }} />
           </div>
-          <a href="https://useflow.ng" style={{ fontSize: "0.8rem", fontWeight: 500, color: "#6B6560", textDecoration: "none", letterSpacing: "0.01em" }}>useflow.ng</a>
+
+          <a
+            href="https://useflow.ng"
+            onClick={(e) => e.preventDefault()}
+            style={{
+              fontSize: "0.75rem", // Marginally smaller for tighter mobile typography
+              fontWeight: 500,
+              color: "#A29C95",
+              textDecoration: "none",
+              letterSpacing: "0.01em",
+              cursor: "not-allowed",
+              pointerEvents: "none"
+            }}
+          >
+            useflow.ng
+          </a>
         </motion.header>
 
         {/* ── Main Viewport Wrapper ── */}

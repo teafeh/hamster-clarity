@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth }              from '@/hooks/useAuth'
 import { useBusiness }          from '@/hooks/useBusiness'
-import { appointmentService }   from '@/services/appointmentService'
+import { appointmentService } from '@/services/appointmentService'
+
 import type {
   AppointmentWithRelations,
   AppointmentPayload,
@@ -112,6 +113,7 @@ export function useAppointments(): UseAppointmentsResult {
       user.id,
       payload
     )
+
 
     setAppointments((prev) =>
       sortAppointments([...prev, created])

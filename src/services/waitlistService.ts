@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase.ts";
 
 export async function joinWaitlist(email: string) {
     const { error } = await supabase.functions.invoke(

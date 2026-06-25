@@ -83,6 +83,16 @@ export default function AppointmentDetailsModal({
           />
 
           <Detail
+            label="Payment Method"
+            value={appointment.payment_method ?? '—'}
+          />
+
+          <Detail
+            label="Payment Status"
+            value={appointment.payment_status ?? '—'}
+          />
+
+          <Detail
             label="Duration"
             value={
               appointment.duration_minutes

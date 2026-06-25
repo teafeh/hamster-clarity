@@ -9,7 +9,12 @@
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
-    "supabase:types": "supabase gen types typescript --project-id YOUR_PROJECT_REF > src/lib/database.types.ts"
+    "supabase:types": "supabase gen types typescript --project-id YOUR_PROJECT_REF > src/lib/database.types.ts",
+    "deploy:booking": "supabase functions deploy booking-created",
+    "deploy:customer": "supabase functions deploy customer-created",
+    "deploy:reminder": "supabase functions deploy appointment-reminder",
+
+    "deploy:automations": "npm run deploy:booking && npm run deploy:customer && npm run deploy:reminder"
   },
   "dependencies": {
     "@lottiefiles/dotlottie-react": "^0.19.4",

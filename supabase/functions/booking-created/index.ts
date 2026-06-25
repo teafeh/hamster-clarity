@@ -1,5 +1,5 @@
-import { getAppointment } from "./services/appointmentService.ts"
-import { bookingConfirmationService } from "./services/bookingConfirmationService.ts"
+import { getAppointment } from "../shared/appointment/appointmentService.ts"
+import { bookingConfirmationService } from "../shared/email/bookingConfirmationService.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

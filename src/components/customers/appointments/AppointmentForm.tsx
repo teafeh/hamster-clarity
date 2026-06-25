@@ -41,6 +41,8 @@ interface FormState {
   customerStatus: string
   assignedTo: string
   leadSource: string
+  paymentStatus: string
+  paymentMethod: string
 }
 
 interface FieldErrors {
@@ -61,6 +63,8 @@ const EMPTY_FORM: FormState = {
   customerStatus: 'new',
   assignedTo: '',
   leadSource: '',
+  paymentStatus: "pending",
+  paymentMethod: "",
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -132,17 +136,20 @@ export default function AppointmentForm({
       // Edit Mode
       const { date, time } = parseScheduledAt(appointment.scheduled_at)
       setForm({
-  customerId: appointment.customer_id || '',
-  serviceId: appointment.service_id || '',
-  date,
-  time,
-  durationMinutes: appointment.duration_minutes?.toString() || '30',
-  notes: appointment.notes || '',
+        customerId: appointment.customer_id || '',
+        serviceId: appointment.service_id || '',
+        date,
+        time,
+        durationMinutes: appointment.duration_minutes?.toString() || '30',
+        notes: appointment.notes || '',
 
-  customerStatus: appointment.customer_status || 'new',
-  assignedTo: appointment.assigned_to || '',
-  leadSource: appointment.lead_source || '',
-})
+        customerStatus: appointment.customer_status || 'new',
+        assignedTo: appointment.assigned_to || '',
+        leadSource: appointment.lead_source || '',
+
+        paymentStatus: appointment.payment_status || "pending",
+        paymentMethod: appointment.payment_method || "",
+      })
     } else if (initialScheduledAt) {
       // Create Mode with a cell clicked in a Calendar Grid view
       const { date, time } = parseScheduledAt(initialScheduledAt)
@@ -278,7 +285,9 @@ export default function AppointmentForm({
 
   customer_status: form.customerStatus,
   assigned_to: form.assignedTo.trim() || null,
-  lead_source: form.leadSource || null,
+        lead_source: form.leadSource || null,
+        payment_method: form.paymentMethod || null,
+  payment_status: form.paymentStatus || null
 }
 
       console.log("PAYLOAD ", payload);
@@ -601,7 +610,35 @@ export default function AppointmentForm({
     <option value="whatsapp">WhatsApp</option>
     <option value="other">Other</option>
   </select>
-</div>
+        </div>
+       
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <select
+            name="paymentStatus"
+            value={form.paymentStatus}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border rounded-md text-sm"
+          >
+            <option value="pending">Pending</option>
+            <option value="paid">Paid</option>
+          </select>
+
+          <select
+            name="paymentMethod"
+            value={form.paymentMethod}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border rounded-md text-sm"
+          >
+            <option value="">Select payment</option>
+            <option value="cash">Cash</option>
+            <option value="transfer">Transfer</option>
+            <option value="pos">POS</option>
+            <option value="card">Card</option>
+            <option value="online">Online</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
 
         {/* Custom Form Notes textarea */}
         <div>

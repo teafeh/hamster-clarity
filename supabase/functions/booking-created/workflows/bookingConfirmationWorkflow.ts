@@ -1,4 +1,4 @@
-import { bookingConfirmationService } from '../services/bookingConfirmationService'
+import { bookingConfirmationService } from '../../shared/email/bookingConfirmationService'
 
 import type { AppointmentWithRelations } from '../../../../src/services/appointmentService'
 import type { Customer } from '../../../../src/services/customerService'

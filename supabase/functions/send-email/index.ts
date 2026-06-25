@@ -19,19 +19,29 @@ Deno.serve(async (req) => {
 
   try {
     const {
+  to,
+  subject,
+  html,
+
+  senderName,
+  replyTo,
+} = await req.json();
+
+    const { data, error } =
+  await resend.emails.send({
+      from: `${senderName || "UseFlow"} <hello@useflow.cc>`,
+
       to,
       subject,
       html,
-    } = await req.json();
 
-    const { data, error } =
-      await resend.emails.send({
-        from:
-          "Flow by Hamster <onboarding@resend.dev>",
-        to,
-        subject,
-        html,
-      });
+      replyTo,
+    });
+    
+    console.log({
+  resendData: data,
+  resendError: error,
+});
     
     console.log({
       to,
