@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import { BsTwitterX, BsInstagram, BsTiktok, BsLinkedin } from "react-icons/bs";
 import { supabase } from "@/lib/supabase";
-import Hamsterlogo from "../../public/animations/Hamster.svg";
 import Hamster from "../../public/animations/Hamster.svg";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
