@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase.ts";
+import { supabase } from "../../shared/lib/supabase.ts";
 
 export const emailService = {
   async sendWelcomeEmail({

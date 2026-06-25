@@ -1,4 +1,4 @@
-import { automationService } from '../services/automationService'
+import { automationService } from '../../shared/automation/automationService'
 import { bookingConfirmationWorkflow } from '../workflows/bookingConfirmationWorkflow'
 import type { Business } from '../../businessService'
 import type { AppointmentWithRelations } from '../../appointmentService'

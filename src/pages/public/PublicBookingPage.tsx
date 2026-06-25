@@ -112,7 +112,10 @@ export default function PublicBookingPage() {
 
             customer_status: null,
             assigned_to: null,
-            lead_source: 'public_booking',
+            lead_source: "public_booking",
+
+            payment_status: "pending",
+            payment_method: null,
           }
         )
 
@@ -126,6 +129,7 @@ export default function PublicBookingPage() {
             },
           }
         )
+      
 
       console.log("[EDGE FUNCTION]", data)
 

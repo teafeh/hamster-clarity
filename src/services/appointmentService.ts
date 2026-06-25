@@ -57,6 +57,8 @@ export interface AppointmentPayload {
   customer_status: string | null
   assigned_to: string | null
   lead_source: string | null
+  payment_status: string | null
+payment_method: string | null
 }
 
 export interface GetAppointmentsOptions {
@@ -90,6 +92,8 @@ const APPOINTMENT_SELECT = `
   customer_status,
   assigned_to,
   lead_source,
+  payment_status,
+payment_method,
   customer:customers ( id, first_name, last_name ),
   service:services   ( id, name, price )
   business:businesses ( id, name, slug )
@@ -156,7 +160,9 @@ export const appointmentService = {
 
   customer_status: payload.customer_status,
   assigned_to: payload.assigned_to,
-  lead_source: payload.lead_source,
+        lead_source: payload.lead_source,
+  payment_status: payload.payment_status,
+payment_method: payload.payment_method,
 })
       .select(APPOINTMENT_SELECT)
       .single()
@@ -187,7 +193,9 @@ export const appointmentService = {
 
   customer_status: payload.customer_status,
   assigned_to: payload.assigned_to,
-  lead_source: payload.lead_source,
+        lead_source: payload.lead_source,
+  payment_status: payload.payment_status,
+payment_method: payload.payment_method,
 })
       .eq('id', appointmentId)
       .select(APPOINTMENT_SELECT)
@@ -218,7 +226,16 @@ export const appointmentService = {
   ): Promise<AppointmentWithRelations> {
     const { data, error } = await supabase
       .from('appointments')
-      .update({ status })
+      .update(
+  status === "completed"
+    ? {
+        status,
+        completed_at: new Date().toISOString(),
+      }
+    : {
+        status,
+      }
+)
       .eq('id', appointmentId)
       .select(APPOINTMENT_SELECT)
       .single()
@@ -256,4 +273,6 @@ export const appointmentService = {
   return data as unknown as AppointmentWithRelations
   },
   
+  
 }
+

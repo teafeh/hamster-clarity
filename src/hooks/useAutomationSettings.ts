@@ -6,20 +6,22 @@ import {
 } from '@/services/automationService'
 
 
-export type AutomationBooleanKey =
-  | 'flow_assistant_enabled'
-  | 'welcome_customer_enabled'
-  | 'appointment_reminder_enabled'
-  | 'follow_up_enabled'
-  | 'win_back_enabled'
+ export type AutomationBooleanKey =
+  | "flow_assistant_enabled"
+  | "welcome_customer_enabled"
+  | "appointment_reminder_enabled"
+  | "follow_up_enabled"
+  | "review_request_enabled"
+  | "win_back_enabled";
 
 
   const WORKFLOW_KEYS: AutomationBooleanKey[] = [
-  'welcome_customer_enabled',
-  'appointment_reminder_enabled',
-  'follow_up_enabled',
-  'win_back_enabled',
-]
+  "welcome_customer_enabled",
+  "appointment_reminder_enabled",
+  "follow_up_enabled",
+  "review_request_enabled",
+  "win_back_enabled",
+];
 
 
 export function useAutomationSettings() {
@@ -102,11 +104,10 @@ export function useAutomationSettings() {
         [key]: value,
       }
 
-      const anyWorkflowEnabled =
-        WORKFLOW_KEYS.some(
-          (workflowKey) =>
-            nextSettings[workflowKey]
-        )
+      const anyWorkflowEnabled = WORKFLOW_KEYS.some(
+  (workflowKey: AutomationBooleanKey) =>
+    Boolean(nextSettings[workflowKey])
+);
 
       updates.flow_assistant_enabled =
         anyWorkflowEnabled

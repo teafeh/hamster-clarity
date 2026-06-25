@@ -26,7 +26,13 @@ const WORKFLOWS = [
         id: 'follow_up_enabled' as WorkflowSettingKey,
         title: 'Follow-up After Visit',
         description:
-            'Ask customers for feedback after an appointment.',
+            'Thank customers after their appointment.',
+    },
+    {
+        id: 'review_request_enabled' as WorkflowSettingKey,
+        title: 'Review Request',
+        description:
+            'Ask satisfied customers to leave a public review 24 hours after their visit.',
     },
     {
         id: 'win_back_enabled' as WorkflowSettingKey,
@@ -632,6 +638,8 @@ export default function AutomationsPage() {
                         {'{{business_name}}'}
                         <br />
                         {'{{sender_name}}'}
+                        <br />
+                        {'{{review_link}}'}
                     </div>
 
                     <div>
