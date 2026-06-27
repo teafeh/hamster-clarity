@@ -13,6 +13,16 @@ export type EmailTemplateUpdate =
 ]
 
 export const emailTemplateService = {
+
+  async ensureDefaultTemplates(
+  businessId: string
+): Promise<void> {
+  await this.createDefaultTemplates(
+    businessId
+  );
+},
+
+  
   async getTemplatesByBusinessId(
   businessId: string
 ): Promise<EmailTemplate[]> {

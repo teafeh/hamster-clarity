@@ -13,7 +13,6 @@
     "deploy:booking": "supabase functions deploy booking-created",
     "deploy:customer": "supabase functions deploy customer-created",
     "deploy:reminder": "supabase functions deploy appointment-reminder",
-
     "deploy:automations": "npm run deploy:booking && npm run deploy:customer && npm run deploy:reminder"
   },
   "dependencies": {

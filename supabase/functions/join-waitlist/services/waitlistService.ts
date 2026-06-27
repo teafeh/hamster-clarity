@@ -14,24 +14,27 @@ export const waitlistService = {
   },
 
   async join(data: {
-    email: string
-    business_type: string
-    timezone: string
-    source: string
-  }) {
-    const { data: row, error } = await supabase
-      .from("waitlist")
-      .insert({
-        email: data.email,
-        business_type: data.business_type,
-        timezone: data.timezone,
-        source: data.source,
-      })
-      .select()
-      .single()
+  email: string
+  business_type: string
+  timezone: string
+  source: string
+}) {
+  const betaToken = crypto.randomUUID()
 
-    if (error) throw error
+  const { data: row, error } = await supabase
+    .from("waitlist")
+    .insert({
+      email: data.email,
+      business_type: data.business_type,
+      timezone: data.timezone,
+      source: data.source,
+      beta_token: betaToken,
+    })
+    .select()
+    .single()
 
-    return row
-  },
+  if (error) throw error
+
+  return row
+},
 }

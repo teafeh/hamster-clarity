@@ -57,11 +57,11 @@ Deno.serve(async (req: Request) => {
 
     try {
   await emailService.sendWelcomeEmail({
-    email: data.email,
-    businessType: data.business_type,
-      });
+  email: data.email,
+  businessType: data.business_type,
+  betaToken: entry.beta_token,
+})
 
-      console.log("[WAITLIST] Welcome email sent.");
     } catch (err) {
       console.error(
         "[WAITLIST] Failed to send welcome email:",
@@ -72,9 +72,7 @@ Deno.serve(async (req: Request) => {
       // User is already on the waitlist.
     }
 
-    console.log(
-      "[WAITLIST] Welcome email sent."
-    );
+  
 
     return Response.json(
       {

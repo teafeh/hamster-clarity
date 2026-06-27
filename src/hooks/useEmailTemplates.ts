@@ -29,23 +29,14 @@ export function useEmailTemplates() {
       setLoading(true)
       setError(null)
 
-      const data =
-        await emailTemplateService.getTemplatesByBusinessId(
-          business.id
-          )
-        
-        console.log(
-  '[AUTOMATION] Templates:',
-  templates
-)
-        
-                console.log(
-        templates.map(t => ({
-            id: t.id,
-            type: t.template_type,
-            subject: t.subject
-        }))
-                )
+      await emailTemplateService.ensureDefaultTemplates(
+  business.id
+);
+
+const data =
+  await emailTemplateService.getTemplatesByBusinessId(
+    business.id
+  );
         
 
       setTemplates(data)
