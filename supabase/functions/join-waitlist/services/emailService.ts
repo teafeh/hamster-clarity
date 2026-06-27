@@ -19,6 +19,7 @@ export const emailService = {
     const html = renderTemplate(
       waitlistWelcomeTemplate({
         businessType,
+        betaToken
       })
     );
 

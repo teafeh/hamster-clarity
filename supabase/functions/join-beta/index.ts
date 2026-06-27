@@ -7,7 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -20,17 +19,22 @@ Deno.serve(async (req: Request) => {
 
     const data = validateBetaRequest(body);
 
-    const entry = await betaService.join(data.token);
+    const result = await betaService.join(data.token);
 
     console.log(
-      "[BETA] User joined beta:",
-      entry.email,
+      "[BETA]",
+      result.alreadyJoined
+        ? `Already joined: ${result.user.email}`
+        : `Joined beta: ${result.user.email}`,
     );
 
     return Response.json(
       {
         success: true,
-        message: "Successfully joined beta program.",
+        alreadyJoined: result.alreadyJoined,
+        message: result.alreadyJoined
+          ? "You're already a beta tester."
+          : "Successfully joined beta program.",
       },
       {
         headers: corsHeaders,

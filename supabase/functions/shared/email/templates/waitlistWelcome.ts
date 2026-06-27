@@ -6,9 +6,11 @@ import { card } from "../components/card.ts";
 
 export function waitlistWelcomeTemplate({
   businessType,
+  betaToken,
 }: {
   businessType: string;
-}): EmailTemplate {
+  betaToken: string;
+}): EmailTemplate  {
   return {
     title: "Welcome to Flow by Hamster",
 
@@ -41,7 +43,7 @@ export function waitlistWelcomeTemplate({
 
     cta: {
   label: "Join the Beta Tester Program",
-  url: `${FLOW.website}/beta?token=${betaToken}`,
+  url: `https://www.useflow.cc/beta?token=${betaToken}`,
 }
   };
 }

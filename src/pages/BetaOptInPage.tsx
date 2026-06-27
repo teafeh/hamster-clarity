@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-type Status = "loading" | "success" | "error";
+type Status =
+    | "loading"
+    | "success"
+    | "alreadyJoined"
+    | "error";
 
 export default function BetaOptInPage() {
     const [searchParams] = useSearchParams();
-    const [status, setStatus] = useState<Status>("loading");
+
+    const [status, setStatus] =
+        useState<Status>("loading");
+
     const [message, setMessage] = useState("");
 
     useEffect(() => {
@@ -36,12 +43,19 @@ export default function BetaOptInPage() {
                 const result = await response.json();
 
                 if (!response.ok || !result.success) {
-                    throw new Error(result.error ?? "Unable to join beta.");
+                    throw new Error(
+                        result.error ?? "Unable to join beta."
+                    );
                 }
 
-                setStatus("success");
+                if (result.alreadyJoined) {
+                    setStatus("alreadyJoined");
+                } else {
+                    setStatus("success");
+                }
             } catch (err) {
                 setStatus("error");
+
                 setMessage(
                     err instanceof Error
                         ? err.message
@@ -55,54 +69,105 @@ export default function BetaOptInPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8] px-6">
-            <div className="max-w-lg w-full text-center">
+            <div className="max-w-xl w-full text-center">
+
+                <img
+                    src="/animations/Hamster.svg"
+                    alt="Flow Hamster"
+                    className="w-36 md:w-44 mx-auto mb-8 select-none"
+                    draggable={false}
+                />
+
                 {status === "loading" && (
                     <>
+                        <p className="uppercase tracking-[0.25em] text-xs font-semibold text-[#B85C38] mb-3">
+                            Checking invitation
+                        </p>
+
                         <h1
-                            className="text-4xl mb-4"
-                            style={{ fontFamily: "'Fraunces', serif" }}
+                            className="text-4xl md:text-5xl mb-5"
+                            style={{
+                                fontFamily: "'Fraunces', serif",
+                            }}
                         >
-                            Joining Beta...
+                            One moment...
                         </h1>
 
-                        <p className="text-gray-500">
-                            Please wait while we reserve your spot.
+                        <p className="text-gray-600 leading-8">
+                            We're reserving your place in the
+                            Flow beta.
                         </p>
                     </>
                 )}
 
                 {status === "success" && (
                     <>
-                        <div className="text-6xl mb-6">🎉</div>
+                        <p className="uppercase tracking-[0.25em] text-xs font-semibold text-[#B85C38] mb-3">
+                            Welcome aboard
+                        </p>
 
                         <h1
-                            className="text-4xl mb-5"
-                            style={{ fontFamily: "'Fraunces', serif" }}
+                            className="text-4xl md:text-5xl mb-5"
+                            style={{
+                                fontFamily: "'Fraunces', serif",
+                            }}
                         >
-                            You're officially a Beta Tester
+                            🎉 You're officially a Beta Tester
                         </h1>
 
                         <p className="text-gray-600 leading-8">
                             Thanks for helping build Flow.
                             <br />
-                            We'll contact you before launch with early access,
-                            sneak peeks and opportunities to shape the product.
+                            We'll contact you before launch with
+                            early access, sneak peeks and
+                            opportunities to shape the product.
+                        </p>
+                    </>
+                )}
+
+                {status === "alreadyJoined" && (
+                    <>
+                        <p className="uppercase tracking-[0.25em] text-xs font-semibold text-[#B85C38] mb-3">
+                            You're already in
+                        </p>
+
+                        <h1
+                            className="text-4xl md:text-5xl mb-5"
+                            style={{
+                                fontFamily: "'Fraunces', serif",
+                            }}
+                        >
+                            ✅ Welcome back!
+                        </h1>
+
+                        <p className="text-gray-600 leading-8">
+                            You're already part of the Flow beta
+                            program.
+                            <br />
+                            There's nothing else you need to do.
+                            We'll reach out before launch with
+                            updates, early access and exclusive
+                            beta opportunities.
                         </p>
                     </>
                 )}
 
                 {status === "error" && (
                     <>
-                        <div className="text-6xl mb-6">😕</div>
+                        <p className="uppercase tracking-[0.25em] text-xs font-semibold text-[#B85C38] mb-3">
+                            Invalid invitation
+                        </p>
 
                         <h1
-                            className="text-4xl mb-5"
-                            style={{ fontFamily: "'Fraunces', serif" }}
+                            className="text-4xl md:text-5xl mb-5"
+                            style={{
+                                fontFamily: "'Fraunces', serif",
+                            }}
                         >
-                            Something went wrong
+                            We couldn't verify your invite
                         </h1>
 
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 leading-8">
                             {message}
                         </p>
                     </>
