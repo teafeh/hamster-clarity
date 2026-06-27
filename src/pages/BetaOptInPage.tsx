@@ -68,8 +68,8 @@ export default function BetaOptInPage() {
     }, [searchParams]);
 
     return (
-        <div className="h-screen overflow-hidden flex items-center justify-center bg-[#FAFAF8] px-6">
-            <div className="max-w-xl w-full text-center">
+        <div className="min-h-dvh overflow-hidden flex items-center justify-center bg-[#FAFAF8] px-6 py-8">
+            <div className="w-full max-w-xl text-center flex flex-col items-center">
 
                 <img
                     src="/animations/Hamster.svg"
