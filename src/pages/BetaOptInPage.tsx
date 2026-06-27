@@ -68,7 +68,7 @@ export default function BetaOptInPage() {
     }, [searchParams]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8] px-6">
+        <div className="h-screen overflow-hidden flex items-center justify-center bg-[#FAFAF8] px-6">
             <div className="max-w-xl w-full text-center">
 
                 <img
