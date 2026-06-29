@@ -1,53 +1,53 @@
 import { customerCreatedWorkflow } from "./workflows/customerCreatedWorkflow.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { handleOptions } from "../shared/http/options.ts";
 
-Deno.serve(async (req) => {
-  console.log("[STEP 1] Customer Created request received");
+import {
+  ok,
+  serverError,
+} from "../shared/http/responses.ts";
 
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+import {
+  validateCustomerCreatedRequest,
+} from "./validation/requestSchema.ts";
+
+Deno.serve(async (req: Request) => {
+  const options = handleOptions(req);
+
+  if (options) {
+    return options;
   }
 
   try {
+    console.log(
+      "[STEP 1] Customer Created request received",
+    );
+
     const body = await req.json();
 
-    console.log("[EDGE]", body);
+    const { customerId } =
+      validateCustomerCreatedRequest(body);
 
-    if (!body.customerId) {
-      throw new Error("customerId is required");
-    }
-
-    const result = await customerCreatedWorkflow.run(
-      body.customerId
-    );
-
-    console.log("[STEP 2] Workflow completed");
-
-    return Response.json(result, {
-      headers: corsHeaders,
+    console.log("[EDGE]", {
+      customerId,
     });
-  } catch (error) {
-    console.error(error);
 
-    return Response.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unknown error",
-      },
-      {
-        status: 500,
-        headers: corsHeaders,
-      }
+    const result =
+      await customerCreatedWorkflow.run(
+        customerId,
+      );
+
+    console.log(
+      "[STEP 2] Workflow completed",
     );
+
+    return ok(result);
+  } catch (error) {
+    console.error(
+      "[CUSTOMER CREATED]",
+      error,
+    );
+
+    return serverError(error);
   }
 });

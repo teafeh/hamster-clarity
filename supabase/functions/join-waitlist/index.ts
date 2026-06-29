@@ -1,24 +1,28 @@
 import { waitlistService } from "./services/waitlistService.ts";
 import { emailService } from "./services/emailService.ts";
+
+import { handleOptions } from "../shared/http/options.ts";
+
+import {
+  ok,
+  serverError,
+} from "../shared/http/responses.ts";
+
 import {
   validateWaitlistRequest,
-} from "./validation/waitlistSchema.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+} from "./validation/requestSchema.ts";
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+  const options = handleOptions(req);
+
+  if (options) {
+    return options;
   }
 
   try {
-    console.log("[WAITLIST] Request received");
+    console.log(
+      "[STEP 1] Waitlist request received",
+    );
 
     const body = await req.json();
 
@@ -26,82 +30,69 @@ Deno.serve(async (req: Request) => {
       validateWaitlistRequest(body);
 
     console.log(
-      "[WAITLIST] Payload validated"
+      "[STEP 2] Request validated",
     );
 
     const existing =
       await waitlistService.findByEmail(
-        data.email
+        data.email,
       );
 
     if (existing) {
-      return Response.json(
-        {
-          success: false,
-          message:
-            "You're already on the waitlist.",
-        },
-        {
-          headers: corsHeaders,
-        }
+      console.log(
+        "[STEP 3] Already on waitlist",
       );
+
+      return ok({
+        success: true,
+        alreadyJoined: true,
+        message:
+          "You're already on the waitlist.",
+      });
     }
 
     const entry =
       await waitlistService.join(data);
 
     console.log(
-      "[WAITLIST] Added:",
-      entry.email
+      "[STEP 3] Added to waitlist:",
+      entry.email,
     );
 
     try {
-  await emailService.sendWelcomeEmail({
-  email: data.email,
-  businessType: data.business_type,
-  betaToken: entry.beta_token,
-})
+      await emailService.sendWelcomeEmail({
+        email: data.email,
+        businessType:
+          data.business_type,
+        betaToken:
+          entry.beta_token,
+      });
 
-    } catch (err) {
+      console.log(
+        "[STEP 4] Welcome email sent",
+      );
+    } catch (error) {
       console.error(
-        "[WAITLIST] Failed to send welcome email:",
-        err
+        "[WAITLIST EMAIL]",
+        error,
       );
 
       // Don't fail the request.
-      // User is already on the waitlist.
+      // The user has already been added to the waitlist.
     }
 
-  
-
-    return Response.json(
-      {
-        success: true,
-        message:
-          "Successfully joined the waitlist.",
-      },
-      {
-        headers: corsHeaders,
-      }
-    );
+    return ok({
+      success: true,
+      alreadyJoined: false,
+      message:
+        "Successfully joined the waitlist.",
+    });
   } catch (error) {
     console.error(
       "[WAITLIST]",
-      error
+      error,
     );
 
-    return Response.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unknown error",
-      },
-      {
-        status: 500,
-        headers: corsHeaders,
-      }
-    );
+    return serverError(error);
   }
 });

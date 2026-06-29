@@ -1,73 +1,73 @@
-import { getAppointment } from "../shared/appointment/appointmentService.ts"
-import { bookingConfirmationService } from "../shared/email/bookingConfirmationService.ts"
+import {
+  getAppointment,
+} from "../shared/appointment/appointmentService.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { bookingConfirmationService } from "../shared/email/bookingConfirmationService.ts";
 
-Deno.serve(async (req) => {
+import { handleOptions } from "../shared/http/options.ts";
 
-    console.log("[STEP 1] Request received")
-    
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+import {
+  ok,
+  serverError,
+} from "../shared/http/responses.ts";
+
+import {
+  validateBookingConfirmationRequest,
+} from "./validation/requestSchema.ts";
+
+Deno.serve(async (req: Request) => {
+  const options = handleOptions(req);
+
+  if (options) {
+    return options;
   }
 
   try {
-      const body = await req.json()
-      
-      console.log(body)
-    
-
-        const appointment =
-            await getAppointment(body.appointmentId)
-      
-      console.log("[STEP 2] Appointment loaded")
-console.log(appointment)
-
-        console.log(
-        "[EDGE APPOINTMENT]",
-        appointment
-        )
-      
-      if (!appointment.customer) {
-  throw new Error("Customer relation not loaded")
-}
-
-      
-      await bookingConfirmationService.send(
-        appointment,
-        appointment.customer
-        )
-
-        console.log("[STEP 3] Booking confirmation sent")
-
-    return Response.json(
-        {
-            success: true,
-            appointment,
-        },
-        {
-            headers: corsHeaders,
-        }
-        )
-  } catch (error) {
-    return Response.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unknown error",
-      },
-      {
-        status: 500,
-        headers: corsHeaders,
-      }
+    console.log(
+      "[STEP 1] Booking Confirmation request received",
     );
+
+    const body = await req.json();
+
+    const { appointmentId } =
+      validateBookingConfirmationRequest(body);
+
+    console.log("[EDGE]", {
+      appointmentId,
+    });
+
+    const appointment =
+      await getAppointment(appointmentId);
+
+    console.log(
+      "[STEP 2] Appointment loaded",
+    );
+
+    if (!appointment.customer) {
+      throw new Error(
+        "Customer relation not loaded",
+      );
+    }
+
+    await bookingConfirmationService.send(
+      appointment,
+      appointment.customer,
+    );
+
+    console.log(
+      "[STEP 3] Booking confirmation sent",
+    );
+
+    return ok({
+      success: true,
+      appointment,
+    });
+  } catch (error) {
+    console.error(
+      "[BOOKING CONFIRMATION]",
+      error,
+    );
+
+    return serverError(error);
   }
 });

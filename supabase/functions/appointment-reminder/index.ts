@@ -2,36 +2,47 @@ import {
   getAppointment,
   markReminderSent,
 } from "../shared/appointment/appointmentService.ts";
+
 import { appointmentReminderService } from "../shared/email/appointmentReminderService.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { handleOptions } from "../shared/http/options.ts";
 
-Deno.serve(async (req) => {
-  console.log("[STEP 1] Appointment Reminder request received");
+import {
+  ok,
+  serverError,
+} from "../shared/http/responses.ts";
 
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+import {
+  validateAppointmentReminderRequest,
+} from "./validation/requestSchema.ts";
+
+Deno.serve(async (req: Request) => {
+  const options = handleOptions(req);
+
+  if (options) {
+    return options;
   }
 
   try {
+    console.log(
+      "[STEP 1] Appointment Reminder request received"
+    );
+
     const body = await req.json();
 
-    console.log("[EDGE]", body);
+    const { appointmentId } =
+      validateAppointmentReminderRequest(body);
 
-    if (!body.appointmentId) {
-      throw new Error("appointmentId is required");
-    }
+    console.log("[EDGE]", {
+      appointmentId,
+    });
 
     const appointment =
-      await getAppointment(body.appointmentId);
+      await getAppointment(appointmentId);
 
-    console.log("[STEP 2] Appointment loaded");
+    console.log(
+      "[STEP 2] Appointment loaded"
+    );
 
     if (!appointment.customer) {
       throw new Error(
@@ -44,38 +55,27 @@ Deno.serve(async (req) => {
       appointment.customer
     );
 
-      console.log("[STEP 3] Reminder sent");
-      
-
-       await markReminderSent(appointment.id);
-
-        console.log(
-        "[STEP 4] reminder_sent_at updated"
-        );
-
-    return Response.json(
-      {
-        success: true,
-      },
-      {
-        headers: corsHeaders,
-      }
+    console.log(
+      "[STEP 3] Reminder sent"
     );
+
+    await markReminderSent(
+      appointment.id
+    );
+
+    console.log(
+      "[STEP 4] reminder_sent_at updated"
+    );
+
+    return ok({
+      success: true,
+    });
   } catch (error) {
-    console.error(error);
-
-    return Response.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unknown error",
-      },
-      {
-        status: 500,
-        headers: corsHeaders,
-      }
+    console.error(
+      "[APPOINTMENT REMINDER]",
+      error
     );
+
+    return serverError(error);
   }
 });

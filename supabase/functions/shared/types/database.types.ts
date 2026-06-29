@@ -201,37 +201,52 @@ export type Database = {
       }
       businesses: {
         Row: {
+          address: string | null
           business_type: string
           created_at: string
+          email: string | null
           id: string
+          instagram: string | null
           name: string
           operating_hours: Json
+          phone: string | null
           slug: string | null
           tour_completed: boolean | null
           updated_at: string
           user_id: string
+          website: string | null
         }
         Insert: {
+          address?: string | null
           business_type: string
           created_at?: string
+          email?: string | null
           id?: string
+          instagram?: string | null
           name: string
           operating_hours?: Json
+          phone?: string | null
           slug?: string | null
           tour_completed?: boolean | null
           updated_at?: string
           user_id: string
+          website?: string | null
         }
         Update: {
+          address?: string | null
           business_type?: string
           created_at?: string
+          email?: string | null
           id?: string
+          instagram?: string | null
           name?: string
           operating_hours?: Json
+          phone?: string | null
           slug?: string | null
           tour_completed?: boolean | null
           updated_at?: string
           user_id?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -440,28 +455,37 @@ export type Database = {
       }
       waitlist: {
         Row: {
+          beta_joined_at: string | null
+          beta_token: string | null
           business_type: string | null
           created_at: string | null
           email: string
           id: string
+          is_beta_tester: boolean | null
           source: string | null
           status: string | null
           timezone: string | null
         }
         Insert: {
+          beta_joined_at?: string | null
+          beta_token?: string | null
           business_type?: string | null
           created_at?: string | null
           email: string
           id?: string
+          is_beta_tester?: boolean | null
           source?: string | null
           status?: string | null
           timezone?: string | null
         }
         Update: {
+          beta_joined_at?: string | null
+          beta_token?: string | null
           business_type?: string | null
           created_at?: string | null
           email?: string
           id?: string
+          is_beta_tester?: boolean | null
           source?: string | null
           status?: string | null
           timezone?: string | null

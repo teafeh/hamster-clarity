@@ -8,8 +8,8 @@ import {
 import { automationService } from "../../shared/automation/automationService.ts";
 import { emailTemplateService } from "../../shared/email/emailTemplateService.ts";
 import { emailSettingsService } from "../../shared/email/emailSettingsService.ts";
-import { emailSenderService } from "../../shared/email/emailSenderService.ts";
 import { templateVariableService } from "../../shared/utils/templateVariableService.ts";
+import { businessEmailService } from "../../shared/email/businessEmailService.ts";
 
 export const appointmentFollowupWorkflow = {
   async run(appointmentId: string) {
@@ -62,32 +62,15 @@ if (!template) {
       appointment.business.name,
   });
 
-const subject =
-  templateVariableService.replace(
-    template.subject,
-    variables
-  );
-
-const body =
-  templateVariableService.replace(
-    template.body,
-    variables
-  );
 
     console.log("[STEP 5] Sending email");
 
     
-
-   await emailSenderService.sendEmail({
+await businessEmailService.sendTemplate({
   to: appointment.customer.email!,
-  subject,
-  html: body,
-  senderName:
-    emailSettings?.sender_name ??
-    appointment.business.name,
-  replyTo:
-    emailSettings?.reply_to_email ??
-    undefined,
+  template,
+  appointment,
+  emailSettings,
 });
 
     console.log("[STEP 6] Marking follow-up sent");

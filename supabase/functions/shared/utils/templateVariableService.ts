@@ -58,6 +58,16 @@ export const templateVariableService = {
 
       business_type: business.business_type ?? "",
 
+      business_phone: business.phone ?? "",
+
+business_email: business.email ?? "",
+
+business_address: business.address ?? "",
+
+business_website: business.website ?? "",
+
+business_instagram: business.instagram ?? "",
+
       // -------------------------
       // Service
       // -------------------------

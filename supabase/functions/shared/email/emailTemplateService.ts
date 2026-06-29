@@ -79,23 +79,21 @@ export const emailTemplateService = {
       body: `
 Hi {{customer_name}},
 
-Your appointment with {{business_name}} has been confirmed.
+You're all set.
 
-Service:
-{{service_name}}
+We've confirmed your appointment with {{business_name}}.
 
-Date:
-{{appointment_date}}
+Appointment Details
 
-Time:
-{{appointment_time}}
+• Service: {{service_name}}
+• Date: {{appointment_date}}
+• Time: {{appointment_time}}
 
-We look forward to seeing you.
+If anything changes, simply contact us and we'll be happy to help.
 
-Thanks,
+Looking forward to seeing you.
 
-{{sender_name}}
-      `.trim(),
+{{sender_name}}`.trim(),
     },
 
     {
@@ -118,22 +116,17 @@ Best,
       type: EMAIL_TEMPLATE_TYPES.APPOINTMENT_REMINDER,
       subject: 'Appointment Reminder ⏰',
       body: `
-Hi {{customer_name}},
+Just a friendly reminder that your appointment is coming up.
 
-This is a reminder for your upcoming appointment.
+We'll see you on:
 
-Service:
-{{service_name}}
-
-Date:
 {{appointment_date}}
 
-Time:
+at
+
 {{appointment_time}}
 
-See you soon!
-
-{{sender_name}}
+We're looking forward to welcoming you.
       `.trim(),
     },
 
@@ -171,23 +164,13 @@ We'd love to welcome you back.
   subject: 'How was your experience at {{business_name}}? ⭐',
 
   body: `
-Hi {{customer_name}},
+If you enjoyed your visit, we'd really appreciate a quick review.
 
-Thank you for choosing {{business_name}}.
-
-We hope you enjoyed your {{service_name}}.
-
-If you have a minute, we'd really appreciate your feedback.
-
-Leave your review here:
+It only takes a minute and means a lot to our team.
 
 {{review_link}}
 
-Your review helps other customers discover us and helps us improve.
-
-Thank you again!
-
-{{sender_name}}
+Thank you again for choosing {{business_name}}.
   `.trim(),
 },
   ]

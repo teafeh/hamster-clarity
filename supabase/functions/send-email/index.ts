@@ -1,88 +1,84 @@
 import { Resend } from "npm:resend@4.0.0";
 
+import { handleOptions } from "../shared/http/options.ts";
+
+import {
+  ok,
+  serverError,
+} from "../shared/http/responses.ts";
+
+import {
+  validateSendEmailRequest,
+} from "./validation/requestSchema.ts";
+
 const resend = new Resend(
-  Deno.env.get("RESEND_API_KEY")
+  Deno.env.get("RESEND_API_KEY"),
 );
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+Deno.serve(async (req: Request) => {
+  const options = handleOptions(req);
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+  if (options) {
+    return options;
   }
 
   try {
+    console.log(
+      "[STEP 1] Send Email request received",
+    );
+
+    const body = await req.json();
+
     const {
-  to,
-  subject,
-  html,
-
-  senderName,
-  replyTo,
-} = await req.json();
-
-    const { data, error } =
-  await resend.emails.send({
-      from: `${senderName || "UseFlow"} <hello@useflow.cc>`,
-
       to,
       subject,
       html,
-
+      senderName,
       replyTo,
-    });
-    
-    console.log({
-  resendData: data,
-  resendError: error,
-});
-    
-    console.log({
+    } = validateSendEmailRequest(body);
+
+    console.log("[EMAIL]", {
       to,
       subject,
       hasHtml: !!html,
-      hasApiKey: !!Deno.env.get("RESEND_API_KEY"),
     });
 
+    const { data, error } =
+      await resend.emails.send({
+        from: `${
+          senderName ?? "Flow"
+        } <hello@useflow.cc>`,
+
+        to,
+
+        subject,
+
+        html,
+
+        replyTo,
+      });
+
     if (error) {
-      return Response.json(
-        { error },
-        {
-          status: 400,
-          headers: corsHeaders,
-        }
-      );
+      throw error;
     }
 
-    return Response.json(
+    console.log(
+      "[STEP 2] Email sent",
       {
-        success: true,
-        data,
+        id: data?.id,
       },
-      {
-        headers: corsHeaders,
-      }
     );
+
+    return ok({
+      success: true,
+      data,
+    });
   } catch (error) {
-    return Response.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unknown error",
-      },
-      {
-        status: 500,
-        headers: corsHeaders,
-      },
+    console.error(
+      "[SEND EMAIL]",
+      error,
     );
+
+    return serverError(error);
   }
 });
-

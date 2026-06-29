@@ -12,45 +12,27 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       appointments: {
         Row: {
           assigned_to: string | null
           business_id: string
+          completed_at: string | null
           created_at: string
           customer_id: string
           customer_status: string | null
           duration_minutes: number | null
+          followup_sent_at: string | null
           id: string
           lead_source: string | null
           notes: string | null
+          payment_method: string | null
+          payment_status: string | null
           public_token: string | null
+          reminder_sent_at: string | null
+          review_completed_at: string | null
+          review_requested_at: string | null
           scheduled_at: string
           service_id: string
           status: string
@@ -60,14 +42,21 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           business_id: string
+          completed_at?: string | null
           created_at?: string
           customer_id: string
           customer_status?: string | null
           duration_minutes?: number | null
+          followup_sent_at?: string | null
           id?: string
           lead_source?: string | null
           notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
           public_token?: string | null
+          reminder_sent_at?: string | null
+          review_completed_at?: string | null
+          review_requested_at?: string | null
           scheduled_at: string
           service_id: string
           status?: string
@@ -77,14 +66,21 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           business_id?: string
+          completed_at?: string | null
           created_at?: string
           customer_id?: string
           customer_status?: string | null
           duration_minutes?: number | null
+          followup_sent_at?: string | null
           id?: string
           lead_source?: string | null
           notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
           public_token?: string | null
+          reminder_sent_at?: string | null
+          review_completed_at?: string | null
+          review_requested_at?: string | null
           scheduled_at?: string
           service_id?: string
           status?: string
@@ -123,6 +119,8 @@ export type Database = {
           flow_assistant_enabled: boolean
           follow_up_enabled: boolean | null
           id: string
+          review_request_delay_minutes: number
+          review_request_enabled: boolean
           updated_at: string
           welcome_customer_enabled: boolean
           win_back_enabled: boolean | null
@@ -134,6 +132,8 @@ export type Database = {
           flow_assistant_enabled?: boolean
           follow_up_enabled?: boolean | null
           id?: string
+          review_request_delay_minutes?: number
+          review_request_enabled?: boolean
           updated_at?: string
           welcome_customer_enabled?: boolean
           win_back_enabled?: boolean | null
@@ -145,6 +145,8 @@ export type Database = {
           flow_assistant_enabled?: boolean
           follow_up_enabled?: boolean | null
           id?: string
+          review_request_delay_minutes?: number
+          review_request_enabled?: boolean
           updated_at?: string
           welcome_customer_enabled?: boolean
           win_back_enabled?: boolean | null
@@ -199,37 +201,52 @@ export type Database = {
       }
       businesses: {
         Row: {
+          address: string | null
           business_type: string
           created_at: string
+          email: string | null
           id: string
+          instagram: string | null
           name: string
           operating_hours: Json
+          phone: string | null
           slug: string | null
           tour_completed: boolean | null
           updated_at: string
           user_id: string
+          website: string | null
         }
         Insert: {
+          address?: string | null
           business_type: string
           created_at?: string
+          email?: string | null
           id?: string
+          instagram?: string | null
           name: string
           operating_hours?: Json
+          phone?: string | null
           slug?: string | null
           tour_completed?: boolean | null
           updated_at?: string
           user_id: string
+          website?: string | null
         }
         Update: {
+          address?: string | null
           business_type?: string
           created_at?: string
+          email?: string | null
           id?: string
+          instagram?: string | null
           name?: string
           operating_hours?: Json
+          phone?: string | null
           slug?: string | null
           tour_completed?: boolean | null
           updated_at?: string
           user_id?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -438,28 +455,37 @@ export type Database = {
       }
       waitlist: {
         Row: {
+          beta_joined_at: string | null
+          beta_token: string | null
           business_type: string | null
           created_at: string | null
           email: string
           id: string
+          is_beta_tester: boolean | null
           source: string | null
           status: string | null
           timezone: string | null
         }
         Insert: {
+          beta_joined_at?: string | null
+          beta_token?: string | null
           business_type?: string | null
           created_at?: string | null
           email: string
           id?: string
+          is_beta_tester?: boolean | null
           source?: string | null
           status?: string | null
           timezone?: string | null
         }
         Update: {
+          beta_joined_at?: string | null
+          beta_token?: string | null
           business_type?: string | null
           created_at?: string | null
           email?: string
           id?: string
+          is_beta_tester?: boolean | null
           source?: string | null
           status?: string | null
           timezone?: string | null
@@ -600,9 +626,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
