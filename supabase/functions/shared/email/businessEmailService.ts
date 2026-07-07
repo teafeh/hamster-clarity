@@ -9,6 +9,8 @@ export const businessEmailService = {
     template,
     appointment,
     emailSettings,
+    buttonText,
+    buttonUrl,
   }: {
     to: string;
     template: {
@@ -17,33 +19,50 @@ export const businessEmailService = {
     };
     appointment: any;
     emailSettings: any;
+    buttonText?: string;
+    buttonUrl?: string;
   }) {
     const senderName =
       emailSettings?.sender_name ??
       appointment.business.name;
 
     const variables =
-templateContextService.build({
-    appointment,
-    senderName,
-});
+      templateContextService.build({
+        appointment,
+        senderName,
+      });
 
     const subject =
       templateVariableService.replace(
         template.subject,
-        variables
+        variables,
       );
 
     const content =
       templateVariableService.replace(
         template.body,
-        variables
+        variables,
       );
 
     const html = renderBusinessEmail({
       businessName: appointment.business.name,
       senderName,
       content,
+
+      buttonText,
+      buttonUrl,
+
+      businessPhone:
+        variables.business_phone,
+
+      businessAddress:
+        variables.business_address,
+
+      businessWebsite:
+        variables.business_website,
+
+      businessInstagram:
+        variables.business_instagram,
     });
 
     return emailSenderService.sendEmail({
